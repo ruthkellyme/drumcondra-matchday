@@ -17,9 +17,14 @@ function initLeafletMap(mapId, mapData) {
   const container = document.getElementById(mapId);
   if (!container || typeof L === 'undefined') return;
   const map = L.map(container, { scrollWheelZoom: true }).setView([mapData.center.lat, mapData.center.lon], 15);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+  // CARTO's light basemap instead of the standard OSM tiles — the standard
+  // style bakes in red-cross pharmacy/hospital icons that look confusingly
+  // similar to our own red closure markers. This one is deliberately plain
+  // (streets, labels, no POI clutter) so our data is the only thing that pops.
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>',
     maxZoom: 19,
+    subdomains: 'abcd',
   }).addTo(map);
 
   L.marker([mapData.center.lat, mapData.center.lon], {

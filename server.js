@@ -5,6 +5,8 @@ import { fetchEvents } from './lib/scrape.js';
 import { applyHeuristics } from './lib/heuristics.js';
 import { geocodeRoads, CROKE_PARK } from './lib/geocode.js';
 import { fetchSeasonFixtures } from './lib/season.js';
+import { appendFeedback, readFeedback } from './lib/feedback.js';
+import { RESIDENT_REPORTED_ACCESS_ROADS } from './lib/config.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -20,12 +22,13 @@ const cleanRoadName = (n) => n.replace(/^stadium side of\s+/i, '').replace(/\.$/
 const ROLE_TEXT = {
   critical: (name) => `${name} — closed to through-traffic on match day. Resident-pass access is maintained via the green route(s) shown on this map.`,
   good: (name) => `${name} — resident vehicle access maintained here during the closure.`,
+  'good-resident': (name) => `${name} — resident-reported access route (not on Croke Park's official notice, but confirmed by a local).`,
 };
 
 async function attachMap(event) {
   if (!event.official) return event;
   const { closureRoads = [], accessRoads = [] } = event.official;
-  const allNames = [...closureRoads, ...accessRoads];
+  const allNames = [...closureRoads, ...accessRoads, ...RESIDENT_REPORTED_ACCESS_ROADS];
   if (allNames.length === 0) return event;
 
   const geocoded = await geocodeRoads(allNames);
@@ -35,7 +38,7 @@ async function attachMap(event) {
   // display, even though the cleaned version is what gets geocoded — the
   // qualifier matters, a resident reading "St James' Avenue" alone would
   // reasonably assume the whole street, not just the stadium-facing side.
-  const buildMarkers = (names, status) => names
+  const buildMarkers = (names, status, textKey = status) => names
     .map((n) => {
       const g = lookup.get(cleanRoadName(n).toLowerCase());
       if (!g) return null;
@@ -46,7 +49,7 @@ async function attachMap(event) {
         lon: g.lon,
         line: g.line,
         status,
-        description: ROLE_TEXT[status](displayName),
+        description: ROLE_TEXT[textKey](displayName),
       };
     })
     .filter(Boolean);
@@ -54,6 +57,7 @@ async function attachMap(event) {
   const allMarkers = [
     ...buildMarkers(closureRoads, 'critical'),
     ...buildMarkers(accessRoads, 'good'),
+    ...buildMarkers(RESIDENT_REPORTED_ACCESS_ROADS, 'good', 'good-resident'),
   ];
 
   // The same road can legitimately appear in more than one official list —
@@ -113,6 +117,32 @@ app.get('/api/season', async (req, res) => {
       sourceUrl: 'https://crokepark.ie/matchday',
     });
   }
+});
+
+app.post('/api/feedback', (req, res) => {
+  const { eventId, dayLabel, lane, message } = req.body || {};
+  const text = (message || '').trim();
+  if (!text) {
+    return res.status(400).json({ error: 'Say a bit about what actually happened first.' });
+  }
+  if (text.length > 1000) {
+    return res.status(400).json({ error: 'That\'s a lot — keep it under 1000 characters.' });
+  }
+  appendFeedback({
+    submittedAt: new Date().toISOString(),
+    eventId: eventId || null,
+    dayLabel: dayLabel || null,
+    lane: lane || null,
+    message: text,
+  });
+  res.json({ ok: true });
+});
+
+// No auth on this one — fine for a personal community tool where the worst
+// case is someone reads other neighbours' match-day notes, but don't put
+// anything sensitive through the feedback form.
+app.get('/api/feedback', (req, res) => {
+  res.json({ feedback: readFeedback() });
 });
 
 const PORT = process.env.PORT || 4173;

@@ -168,6 +168,172 @@ function buildLane(name, segments, windowStart, windowEnd) {
   ]);
 }
 
+const STATUS_RANK = { good: 0, warning: 1, critical: 2 };
+const PLANNER_LANES = [
+  { key: 'roads', name: 'Roads' },
+  { key: 'parking', name: 'Parking' },
+  { key: 'footTraffic', name: 'Foot traffic' },
+];
+
+function segmentsOverlapping(lane, fromMin, toMin) {
+  return lane.filter((seg) => seg.fromMin < toMin && seg.toMin > fromMin);
+}
+
+function combinedStatusAt(ev, minute) {
+  let worst = 'good';
+  for (const { key } of PLANNER_LANES) {
+    const seg = ev.timeline[key].find((s) => minute >= s.fromMin && minute < s.toMin);
+    if (seg && STATUS_RANK[seg.status] > STATUS_RANK[worst]) worst = seg.status;
+  }
+  return worst;
+}
+
+// Scans the whole day minute-by-minute for a run of "good" (on every lane)
+// at least `durationMin` long, and returns whichever one starts closest to
+// the time the resident actually asked about.
+function findBestWindow(ev, durationMin, preferredMin) {
+  const runs = [];
+  let runStart = null;
+  for (let m = ev.windowStart; m <= ev.windowEnd; m += 5) {
+    const isGood = combinedStatusAt(ev, m) === 'good';
+    if (isGood && runStart === null) runStart = m;
+    if ((!isGood || m === ev.windowEnd) && runStart !== null) {
+      const runEnd = m;
+      if (runEnd - runStart >= durationMin) runs.push({ fromMin: runStart, toMin: runEnd });
+      runStart = null;
+    }
+  }
+  if (!runs.length) return null;
+  // Within a run, the closest usable start to what was asked for is
+  // `preferredMin` itself, clamped to fit the run (a run longer than the
+  // requested duration can start anywhere between its edges).
+  const distanceFor = (run) => {
+    const latestStart = run.toMin - durationMin;
+    const clampedStart = Math.min(Math.max(preferredMin, run.fromMin), latestStart);
+    return { clampedStart, dist: Math.abs(clampedStart - preferredMin) };
+  };
+  const best = runs
+    .map((run) => ({ run, ...distanceFor(run) }))
+    .reduce((closest, candidate) => (candidate.dist < closest.dist ? candidate : closest));
+  return { fromMin: best.clampedStart, toMin: best.clampedStart + durationMin };
+}
+
+function buildPlanner(ev) {
+  const wrap = el('div', { class: 'planner' });
+  wrap.appendChild(el('h4', { text: '🤔 Check a time' }));
+
+  const timeInput = el('input', { type: 'time', class: 'planner-time', value: '13:00' });
+  const durationSelect = el('select', { class: 'planner-duration' }, [
+    el('option', { value: '30' }, ['30 min']),
+    el('option', { value: '60' }, ['1 hour']),
+    el('option', { value: '90' }, ['1.5 hours']),
+    el('option', { value: '120' }, ['2 hours']),
+    el('option', { value: '180' }, ['3 hours']),
+  ]);
+  durationSelect.value = '60';
+  const checkBtn = el('button', { type: 'button' }, ['Check']);
+  const resultEl = el('div', { class: 'planner-result' });
+
+  const form = el('div', { class: 'planner-form' }, [
+    el('label', { class: 'planner-label' }, ['Leaving around', timeInput]),
+    el('label', { class: 'planner-label' }, ['For about', durationSelect]),
+    checkBtn,
+  ]);
+
+  checkBtn.addEventListener('click', () => {
+    const [h, m] = timeInput.value.split(':').map(Number);
+    if (Number.isNaN(h) || Number.isNaN(m)) {
+      resultEl.textContent = 'Pop in a time first.';
+      return;
+    }
+    const startMin = h * 60 + m;
+    const durationMin = Number(durationSelect.value);
+    const endMin = startMin + durationMin;
+
+    const perLane = PLANNER_LANES.map(({ key, name }) => {
+      const overlapping = segmentsOverlapping(ev.timeline[key], startMin, endMin);
+      const worst = overlapping.reduce((acc, s) => (STATUS_RANK[s.status] > STATUS_RANK[acc] ? s.status : acc), 'good');
+      const worstSeg = overlapping.find((s) => s.status === worst);
+      return { name, worst, label: worstSeg ? worstSeg.label : 'Normal' };
+    });
+    const overall = perLane.reduce((acc, l) => (STATUS_RANK[l.worst] > STATUS_RANK[acc] ? l.worst : acc), 'good');
+
+    resultEl.textContent = '';
+    resultEl.className = `planner-result planner-result--${overall}`;
+
+    if (overall === 'good') {
+      resultEl.appendChild(el('p', { text: `✅ Grand, go for it — ${formatClock12(startMin)}–${formatClock12(endMin)} looks clear on roads, parking and foot traffic.` }));
+    } else {
+      const verb = overall === 'critical' ? "🔴 I'd hold off" : '🟡 Doable, but';
+      resultEl.appendChild(el('p', { text: `${verb} — here's what's going on ${formatClock12(startMin)}–${formatClock12(endMin)}:` }));
+      const ul = el('ul');
+      perLane.filter((l) => l.worst !== 'good').forEach((l) => {
+        ul.appendChild(el('li', { text: `${l.name}: ${l.label}` }));
+      });
+      resultEl.appendChild(ul);
+
+      const best = findBestWindow(ev, durationMin, startMin);
+      if (best) {
+        resultEl.appendChild(el('p', { class: 'planner-suggestion', text: `Try ${formatClock12(best.fromMin)}–${formatClock12(best.toMin)} instead — that stretch looks clear.` }));
+      } else {
+        resultEl.appendChild(el('p', { class: 'planner-suggestion', text: "Couldn't find a fully clear window that long today — best to build in some slack whenever you go." }));
+      }
+    }
+  });
+
+  wrap.appendChild(form);
+  wrap.appendChild(resultEl);
+  return wrap;
+}
+
+function buildFeedbackForm(ev) {
+  const details = el('details', { class: 'feedback-form' });
+  details.appendChild(el('summary', { text: '📝 How did this one actually go? Tell us' }));
+
+  const laneSelect = el('select', { class: 'feedback-lane' }, [
+    el('option', { value: 'General' }, ['General']),
+    el('option', { value: 'Roads' }, ['Roads']),
+    el('option', { value: 'Parking' }, ['Parking']),
+    el('option', { value: 'Foot traffic' }, ['Foot traffic']),
+  ]);
+  const textarea = el('textarea', {
+    class: 'feedback-message',
+    rows: '3',
+    placeholder: "e.g. \"Russell Street didn't actually reopen until well after 8pm\"",
+  });
+  const submitBtn = el('button', { type: 'button' }, ['Send']);
+  const statusEl = el('p', { class: 'feedback-status muted' });
+
+  submitBtn.addEventListener('click', async () => {
+    const message = textarea.value.trim();
+    if (!message) {
+      statusEl.textContent = 'Pop in a few words first.';
+      return;
+    }
+    submitBtn.disabled = true;
+    statusEl.textContent = 'Sending…';
+    try {
+      const res = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId: ev.id, dayLabel: ev.dayLabel, lane: laneSelect.value, message }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+      statusEl.textContent = "Thanks — noted, and it'll help tune the next estimate.";
+      textarea.value = '';
+    } catch (err) {
+      statusEl.textContent = `Couldn't send that (${err.message}).`;
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  details.appendChild(el('div', { class: 'feedback-fields' }, [laneSelect, textarea, submitBtn]));
+  details.appendChild(statusEl);
+  return details;
+}
+
 function buildDetailsTable(name, segments) {
   const list = el('ul', { class: 'phase-list' });
   segments.forEach((seg, i) => {
@@ -180,6 +346,27 @@ function buildDetailsTable(name, segments) {
     list.appendChild(row);
   });
   return el('div', { class: 'phase-group' }, [el('h4', { text: name }), list]);
+}
+
+function buildExactTimes(ev) {
+  const details = el('details', { class: 'details-table' });
+  details.appendChild(el('summary', { text: 'Show exact times as a list' }));
+  details.appendChild(buildDetailsTable('Roads', ev.timeline.roads));
+  details.appendChild(buildDetailsTable('Parking', ev.timeline.parking));
+  details.appendChild(buildDetailsTable('Foot traffic', ev.timeline.footTraffic));
+  return details;
+}
+
+// Planner / feedback apply to one specific day's data, but living inside a
+// shared section (picked via a day dropdown) rather than duplicated inside
+// every match card keeps the core "what's happening" timeline the focus.
+// "Show exact times as a list" stays inside each card, next to the chart it
+// explains, rather than moving down here with the interactive tools.
+function buildDayTools(ev) {
+  const wrap = el('div', { class: 'day-tools-content' });
+  wrap.appendChild(buildPlanner(ev));
+  wrap.appendChild(buildFeedbackForm(ev));
+  return wrap;
 }
 
 function relativePastLabel(dateISO, todayISO) {
@@ -262,12 +449,7 @@ function renderEvent(ev, { isPast = false, todayISO = null } = {}) {
   group.appendChild(buildAxis(ev.windowStart, ev.windowEnd));
   card.appendChild(group);
 
-  const details = el('details', { class: 'details-table' });
-  details.appendChild(el('summary', { text: 'Show exact times as a list' }));
-  details.appendChild(buildDetailsTable('Roads', ev.timeline.roads));
-  details.appendChild(buildDetailsTable('Parking', ev.timeline.parking));
-  details.appendChild(buildDetailsTable('Foot traffic', ev.timeline.footTraffic));
-  card.appendChild(details);
+  card.appendChild(buildExactTimes(ev));
 
   return card;
 }
@@ -312,6 +494,26 @@ async function loadEvents() {
       past
         .sort((a, b) => b.date.localeCompare(a.date))
         .forEach((ev) => eventsEl.appendChild(renderEvent(ev, { isPast: true, todayISO })));
+    }
+
+    const dayToolsSection = document.getElementById('day-tools');
+    const dayPicker = document.getElementById('day-picker');
+    const dayToolsContent = document.getElementById('day-tools-content');
+    if (dayToolsSection && dayPicker && dayToolsContent) {
+      if (upcoming.length) {
+        dayToolsSection.hidden = false;
+        dayPicker.textContent = '';
+        upcoming.forEach((ev) => dayPicker.appendChild(el('option', { value: ev.id, text: ev.dayLabel })));
+        const renderSelectedDay = () => {
+          const selected = upcoming.find((ev) => ev.id === dayPicker.value) || upcoming[0];
+          dayToolsContent.textContent = '';
+          dayToolsContent.appendChild(buildDayTools(selected));
+        };
+        dayPicker.onchange = renderSelectedDay;
+        renderSelectedDay();
+      } else {
+        dayToolsSection.hidden = true;
+      }
     }
   } catch (err) {
     eventsEl.textContent = '';

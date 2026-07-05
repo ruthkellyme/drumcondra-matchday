@@ -19,6 +19,13 @@ official tiered system for this. Every segment in the app is labelled
 The assumptions (offsets in minutes, attendance tier thresholds) live in
 `lib/config.js` — tune them as you see how each match day actually plays out.
 
+Each event card has a "How did this one actually go?" form residents can use
+to report corrections — these are appended to `data/feedback.jsonl` (fetch
+them at `GET /api/feedback`, no auth). That file is **not persistent on an
+ephemeral host** like Render's free tier — it's wiped on every redeploy and
+occasionally on restart. Fine for casual use; if it matters, pull the file
+periodically or swap in a real database.
+
 ## Running it
 
 ```
@@ -54,3 +61,22 @@ The free tier spins down after 15 minutes of inactivity, so the first request
 after a quiet spell takes 30-50 seconds to wake back up. Fine for a
 low-traffic community tool; upgrade to a paid instance if that's not fine
 for your neighbours.
+
+**Using a subdomain of credublinnorth.ie instead of the onrender.com URL:**
+
+credublinnorth.ie is hosted on Netlify (a static-site host), which can't run
+this app directly — it needs a persistent Node server, not static files. But
+you can still make it feel like part of the same family of sites by pointing
+a subdomain at Render instead of moving anything:
+
+1. Deploy this app on Render first and note the `https://<something>.onrender.com`
+   URL it gives you.
+2. In whatever DNS panel manages credublinnorth.ie's domain (wherever it was
+   registered — check your Netlify domain settings if unsure), add a `CNAME`
+   record: host `matchday` → value `<something>.onrender.com`.
+3. In Render, under the service's Settings → Custom Domains, add
+   `matchday.credublinnorth.ie` and follow its verification step.
+
+DNS changes can take anywhere from a few minutes to a few hours to propagate.
+Netlify keeps serving the main credublinnorth.ie site untouched throughout —
+this only adds a new subdomain, it doesn't move anything.
