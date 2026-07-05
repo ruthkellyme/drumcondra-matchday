@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Full Season at Croke Park 🗓️</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="page-header">
+    <h1>Full Season at Croke Park 🗓️</h1>
+    <p class="subtitle">
+      Every remaining date on Croke Park's own
+      <a href="https://crokepark.ie/BlankSite/media/Images/GAA%20Museum/Croke-Park-Master-Fixture-List-2026.pdf" target="_blank" rel="noopener">2026 master fixture list</a>
+      — matches and concerts. Only the date and fixture name are official this far out; the impact badge is a rough
+      guess from the fixture type, not real attendance data.
+    </p>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html" class="site-nav-link">🏟️ Match Watch</a>
+      <a href="roads.html" class="site-nav-link">🗺️ Road Closures</a>
+      <a href="season.html" class="site-nav-link is-active" aria-current="page">🗓️ Full Season</a>
+    </nav>
+    <div class="meta-row">
+      <span id="fetched-at" class="muted"></span>
+    </div>
+    <div id="warnings" class="warnings" hidden></div>
+  </header>
+
+  <main>
+    <section class="legend" aria-label="Impact guide">
+      <span class="legend-item"><span class="swatch good"></span>Low</span>
+      <span class="legend-item"><span class="swatch warning"></span>Medium</span>
+      <span class="legend-item"><span class="swatch serious"></span>High</span>
+      <span class="legend-item"><span class="swatch critical"></span>Very high</span>
+      <span class="legend-note">"Very high" includes every advertised concert — big touring acts sell out Croke Park, so we assume a full house until told otherwise.</span>
+    </section>
+
+    <section id="season-list" aria-live="polite">
+      <p class="muted">Loading the season fixture list…</p>
+    </section>
+  </main>
+
+  <div class="ad-discreet">
+    🏺 Made by a Drumcondra local to make my own life easier — hope it's useful for you too. Give me a follow on
+    Instagram if you found it handy:
+    <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
+    · <a href="https://pucaceramics.com/" target="_blank" rel="noopener">Púca Ceramics</a>
+    · <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
+  </div>
+
+  <footer class="page-footer">
+    <p class="muted">
+      Sourced from Croke Park's own master fixture list PDF, which only lists dates and fixture names — no times or
+      attendance that far out. Once Croke Park publishes the week-of community notice for a date, it gets a full
+      detailed estimate on <a href="index.html">the main page</a> instead, linked below.
+    </p>
+  </footer>
+
+  <script src="season.js"></script>
+</body>
+</html>

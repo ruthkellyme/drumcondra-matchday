@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Drumcondra Match Day Watch 🏟️</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="page-header">
+    <h1>Drumcondra Match Day Watch 🏟️</h1>
+    <p class="subtitle">
+      Unofficial, best-guess estimates of when your road, your parking and the footpaths outside will feel a Croke
+      Park crowd — built on top of the real notices at
+      <a href="https://crokepark.ie/communityinfo" target="_blank" rel="noopener">crokepark.ie/communityinfo</a>.
+    </p>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html" class="site-nav-link is-active" aria-current="page">🏟️ Match Watch</a>
+      <a href="roads.html" class="site-nav-link">🗺️ Road Closures</a>
+      <a href="season.html" class="site-nav-link">🗓️ Full Season</a>
+    </nav>
+    <div class="meta-row">
+      <button id="refresh-btn" type="button">Refresh</button>
+      <span id="fetched-at" class="muted"></span>
+    </div>
+    <div id="warnings" class="warnings" hidden></div>
+  </header>
+
+  <main>
+    <section class="legend" aria-label="Status legend">
+      <span class="legend-item"><span class="swatch good"></span>Open / available / normal</span>
+      <span class="legend-item"><span class="swatch warning"></span>Restricted / partial / busy</span>
+      <span class="legend-item"><span class="swatch critical"></span>Closed / maxed out / very busy</span>
+      <span class="legend-item"><span class="swatch critical striped"></span>Closed, but resident pass still gets through</span>
+      <span class="legend-note">"Croke Park" = their own published time. "Est." = our best guess — tell us how it actually went and we'll tune it.</span>
+    </section>
+
+    <section id="events" aria-live="polite">
+      <p class="muted">Loading upcoming events…</p>
+    </section>
+  </main>
+
+  <div class="ad-discreet">
+    🏺 Made by a Drumcondra local to make my own life easier — hope it's useful for you too. Give me a follow on
+    Instagram if you found it handy:
+    <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
+    · <a href="https://pucaceramics.com/" target="_blank" rel="noopener">Púca Ceramics</a>
+    · <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
+  </div>
+
+  <footer class="page-footer">
+    <p class="muted">
+      Every time except the roads/parking start times is a heuristic guess, not official data — see
+      <a href="https://crokepark.ie/communityinfo" target="_blank" rel="noopener">Croke Park's own notice</a>
+      for the confirmed details. Assumptions live in <code>lib/config.js</code> and are meant to be tuned as you see
+      how each match day actually plays out.
+    </p>
+  </footer>
+
+  <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

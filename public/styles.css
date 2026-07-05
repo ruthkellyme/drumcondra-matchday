@@ -1,0 +1,397 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Lato:wght@400;700&display=swap');
+
+:root {
+  --brand: #00577c;       /* Croke Park teal-navy */
+  --brand-dark: #003c56;
+  --surface-1: #fcfcfb;
+  --page-plane: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --muted: #898781;
+  --gridline: #e1e0d9;
+  --border: rgba(11, 11, 11, 0.10);
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --brand: #1c7ba8;
+    --brand-dark: #0d5372;
+    --surface-1: #1a1a19;
+    --page-plane: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --muted: #898781;
+    --gridline: #2c2c2a;
+    --border: rgba(255, 255, 255, 0.10);
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+    --status-critical: #d03b3b;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page-plane);
+  color: var(--text-primary);
+  font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+}
+
+h1, h2, h3, summary {
+  font-family: Montserrat, Helvetica, Arial, sans-serif;
+  font-weight: 700;
+}
+
+a { color: var(--brand); }
+
+.page-header {
+  position: relative;
+  background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+  color: #ffffff;
+  padding: 28px 20px 54px;
+}
+.page-header h1 { margin: 0 0 8px; font-size: 28px; }
+.page-header a { color: #ffffff; text-decoration: underline; }
+.subtitle { max-width: 600px; margin: 0 0 14px; color: rgba(255,255,255,0.9); font-size: 14px; }
+
+/* Site-wide navigation, styled and positioned like a distinct wayfinding
+   strip (docked bottom-right of the banner) rather than a row of buttons —
+   kept visually and structurally separate from page actions (Refresh) in
+   .meta-row, so "where am I in the site" never looks like "do a thing here". */
+.site-nav {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  margin: 0;
+}
+.page-header .site-nav-link {
+  font-family: Montserrat, sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.14);
+  padding: 14px 20px;
+  border-left: 1px solid rgba(255, 255, 255, 0.25);
+}
+.page-header .site-nav-link:hover { background: rgba(0, 0, 0, 0.24); color: #fff; }
+.page-header .site-nav-link.is-active { background: rgba(255, 255, 255, 0.95); color: var(--brand-dark); }
+
+.meta-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+
+button {
+  font-family: Montserrat, sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  background: #ffffff;
+  color: var(--brand-dark);
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+button:hover { background: #eef4f7; }
+
+.muted { color: var(--text-secondary); font-size: 13px; }
+.page-header .muted { color: rgba(255,255,255,0.75); }
+
+.warnings {
+  margin-top: 14px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+.warnings ul { margin: 4px 0 0; padding-left: 18px; }
+
+main { max-width: 880px; margin: 0 auto; padding: 20px; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-note { font-size: 12px; color: var(--muted); }
+.swatch { width: 12px; height: 12px; display: inline-block; }
+.swatch.good { background: var(--status-good); border-radius: 50%; }
+.swatch.warning { background: var(--status-warning); transform: rotate(45deg); }
+.swatch.serious { background: var(--status-serious); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
+.swatch.critical { background: var(--status-critical); border-radius: 2px; }
+.swatch.critical.striped {
+  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.32) 0, rgba(255,255,255,0.32) 2px, transparent 2px, transparent 5px);
+}
+
+.event-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+.event-card.needs-review { border-color: var(--status-warning); }
+
+.season-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--gridline);
+  font-size: 14px;
+}
+.season-row:last-child { border-bottom: none; }
+.season-date { flex: 0 0 110px; color: var(--text-secondary); font-weight: 600; font-size: 13px; }
+.season-fixture { flex: 1 1 auto; }
+.season-tbc { flex: 0 0 auto; font-size: 12px; }
+.season-link { flex: 0 0 auto; font-size: 13px; font-weight: 600; white-space: nowrap; }
+.event-card h2 { margin: 0 0 4px; font-size: 19px; }
+.tagline { margin: 0 0 12px; font-size: 14px; color: var(--text-secondary); }
+.fixtures-list { margin: 0 0 14px; padding-left: 18px; font-size: 14px; }
+.fixture-end-estimate { color: var(--text-secondary); font-size: 12px; }
+.team-swatch {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  margin: 0 4px 0 2px;
+  vertical-align: middle;
+}
+.review-banner {
+  font-size: 12px;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--status-warning) 25%, transparent);
+  border: 1px solid var(--status-warning);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 12px;
+}
+
+.past-events-header { color: var(--muted); font-size: 14px; margin: 8px 0 12px; }
+.event-card.past-event { opacity: 0.6; filter: grayscale(45%); }
+.past-banner {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--page-plane);
+  border: 1px solid var(--gridline);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin-bottom: 12px;
+}
+
+.tip-callout {
+  margin: 0 0 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--brand) 8%, transparent);
+  border-left: 3px solid var(--brand);
+  border-radius: 4px;
+  padding: 10px 14px;
+}
+
+.timeline-group { margin-top: 10px; }
+
+.lanes-wrapper { position: relative; margin-top: 26px; margin-bottom: 38px; }
+.kickoff-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px dashed var(--brand-dark);
+  z-index: 2;
+  cursor: pointer;
+}
+.kickoff-flag {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  transform: translateX(-50%);
+  background: var(--brand-dark);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+.kickoff-marker:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* Estimated final-whistle window — a band, not a line, since (unlike
+   kick-off) it's a range, not a fixed official time. Its flag sits below the
+   lanes so it doesn't collide with the kick-off flags above. */
+.final-whistle-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* No fill — a tinted overlay muddies whatever status colour/texture is
+     underneath (looked like a grubby smudge over the striped roads segment).
+     The two bracket lines are enough to mark the range. */
+  border-left: 2px dashed var(--brand-dark);
+  border-right: 2px dashed var(--brand-dark);
+  z-index: 1;
+  cursor: pointer;
+}
+.final-whistle-flag {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--brand-dark);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+/* A double-header's two final-whistle flags can sit close enough to collide
+   on a narrow chart — drop every other one down a row instead of relying on
+   there always being enough horizontal room. */
+.final-whistle-flag--low { bottom: -36px; }
+.final-whistle-band:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+.lane { display: grid; grid-template-columns: 82px 1fr; align-items: center; gap: 10px; margin-bottom: 6px; }
+.lane-name { font-size: 11px; color: var(--text-secondary); font-weight: 700; line-height: 1.2; }
+.lane-track { position: relative; height: 24px; background: var(--surface-1); border: 1px solid var(--gridline); border-radius: 4px; }
+.seg {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  cursor: pointer;
+}
+.seg:first-child { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
+.seg:last-child { border-top-right-radius: 4px; border-bottom-right-radius: 4px; }
+.seg.status-good { background: var(--status-good); }
+.seg.status-warning { background: var(--status-warning); }
+.seg.status-critical { background: var(--status-critical); }
+/* Same red as a plain critical segment, but diagonal-striped: "closed to
+   through-traffic, EXCEPT resident-pass holders" vs a solid "no exceptions". */
+.seg.textured {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.32) 0,
+    rgba(255, 255, 255, 0.32) 4px,
+    transparent 4px,
+    transparent 10px
+  );
+}
+.seg:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+.axis { position: relative; height: 16px; margin: 4px 0 14px 92px; }
+.axis .tick { position: absolute; top: 0; font-size: 10px; color: var(--muted); border-left: 1px solid var(--gridline); padding-left: 3px; height: 100%; }
+
+.details-table { margin-top: 10px; }
+.phase-group { margin-top: 14px; }
+.phase-group h4 { margin: 0 0 4px; font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+.phase-list { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.phase-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--gridline);
+}
+.phase-row:last-child { border-bottom: none; }
+.phase-row .swatch { flex: 0 0 auto; }
+.phase-time {
+  flex: 0 0 150px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+}
+.phase-label { flex: 1 1 auto; }
+.phase-source {
+  flex: 0 0 84px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.phase-source.official { color: var(--brand); font-weight: 700; }
+
+details summary { cursor: pointer; color: var(--brand); font-size: 13px; margin-top: 6px; }
+
+.road-map-wrap { margin: 18px 0 6px; }
+.road-map { height: 260px; width: 100%; border-radius: 8px; border: 1px solid var(--border); background: var(--gridline); }
+.road-map-large { height: 560px; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 8px; font-size: 12px; color: var(--text-secondary); }
+.map-caption { font-size: 11px; color: var(--muted); margin: 4px 0 0; }
+.map-popup { font-size: 13px; max-width: 220px; }
+.stadium-icon { font-size: 20px; line-height: 24px; text-align: center; }
+
+.tooltip {
+  position: fixed;
+  z-index: 20;
+  background: var(--brand-dark);
+  color: #fff;
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  max-width: 260px;
+  pointer-events: none;
+}
+.tooltip strong { display: block; }
+
+.ad-discreet {
+  max-width: 880px;
+  margin: 0 auto 20px;
+  padding: 10px 20px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+.ad-discreet a { color: var(--brand); }
+
+.page-footer { max-width: 880px; margin: 0 auto; padding: 0 20px 30px; }
+
+html, body { overflow-x: hidden; }
+
+@media (max-width: 600px) {
+  main { padding: 14px; }
+  .page-header { padding: 22px 0 0; }
+  .page-header h1, .page-header .subtitle, .page-header .meta-row { padding: 0 14px; }
+  .page-header h1 { font-size: 22px; }
+  .meta-row { flex-wrap: wrap; row-gap: 8px; margin-top: 10px; }
+
+  /* Docking bottom-right only works with room to spare — on a phone the nav
+     goes back into normal flow, full-width, each tab sharing it equally. */
+  .site-nav { position: static; width: 100%; margin-top: 16px; }
+  .page-header .site-nav-link { flex: 1 1 0; text-align: center; padding: 12px 6px; font-size: 10px; }
+
+  /* Kick-off/final-whistle flags are fixed-position, small-width labels —
+     shrink them so two close-together matches don't overlap on a narrow
+     chart, without touching the JS-computed lane offset they're placed at. */
+  .kickoff-flag, .final-whistle-flag { font-size: 9px; padding: 1px 3px; }
+
+  /* Long single-line rows become a wall of squeezed columns on a phone —
+     stack each row's parts instead of forcing them onto one line. */
+  .season-row { flex-wrap: wrap; row-gap: 2px; }
+  .season-date { flex: 0 0 100%; }
+  .season-fixture { flex: 1 1 auto; }
+  .season-link, .season-tbc { flex: 0 0 100%; white-space: normal; }
+
+  .phase-row { flex-wrap: wrap; row-gap: 2px; }
+  .phase-time { flex: 0 0 auto; order: 2; font-size: 11px; }
+  .phase-label { flex: 1 1 100%; order: 1; }
+  .phase-source { order: 3; margin-left: auto; }
+}

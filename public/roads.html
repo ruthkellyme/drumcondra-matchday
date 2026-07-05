@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Road Closures Map 🗺️</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="page-header">
+    <h1>Road Closures Map 🗺️</h1>
+    <p class="subtitle">
+      Which roads around Croke Park close to through-traffic on a big match day, and which routes keep resident-pass
+      access — this is the same core set of streets every event, so it lives on one page instead of repeating under
+      every match.
+    </p>
+    <nav class="site-nav" aria-label="Site">
+      <a href="index.html" class="site-nav-link">🏟️ Match Watch</a>
+      <a href="roads.html" class="site-nav-link is-active" aria-current="page">🗺️ Road Closures</a>
+      <a href="season.html" class="site-nav-link">🗓️ Full Season</a>
+    </nav>
+    <div class="meta-row">
+      <span id="source-note" class="muted"></span>
+    </div>
+    <div id="warnings" class="warnings" hidden></div>
+  </header>
+
+  <main>
+    <section id="road-map-section">
+      <p class="muted">Loading map…</p>
+    </section>
+  </main>
+
+  <div class="ad-discreet">
+    🏺 Made by a Drumcondra local to make my own life easier — hope it's useful for you too. Give me a follow on
+    Instagram if you found it handy:
+    <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
+    · <a href="https://pucaceramics.com/" target="_blank" rel="noopener">Púca Ceramics</a>
+    · <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
+  </div>
+
+  <footer class="page-footer">
+    <p class="muted">
+      Roads/access routes come from Croke Park's own
+      <a href="https://crokepark.ie/communityinfo" target="_blank" rel="noopener">community notice</a> for the
+      nearest upcoming event. Cordons sit at specific junctions along a route, not evenly along its whole length —
+      this map shows which streets are affected, not exactly where the barriers go.
+    </p>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="roads.js"></script>
+</body>
+</html>
