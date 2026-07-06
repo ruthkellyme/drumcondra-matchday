@@ -175,7 +175,16 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
   background: var(--surface-1);
   color: var(--text-primary);
 }
-.day-tools-content { margin-top: 12px; }
+.day-tools-content {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+@media (max-width: 700px) {
+  .day-tools-content { grid-template-columns: 1fr; }
+}
 .tagline { margin: 0 0 12px; font-size: 14px; color: var(--text-secondary); }
 .fixtures-list { margin: 0 0 14px; padding-left: 18px; font-size: 14px; }
 .fixture-end-estimate { color: var(--text-secondary); font-size: 12px; }
@@ -316,7 +325,6 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 14px 16px;
-  margin-top: 6px;
 }
 .planner h4 { margin: 0 0 10px; font-size: 14px; }
 .planner-form { display: flex; flex-wrap: wrap; align-items: end; gap: 14px; }
@@ -348,8 +356,14 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
 .planner-result--critical p:first-child { font-weight: 700; }
 .planner-suggestion { color: var(--brand-dark); font-weight: 600; }
 
-.feedback-form { margin-top: 14px; }
-.feedback-fields { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; max-width: 420px; }
+.feedback-form {
+  background: var(--page-plane);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+.feedback-form h4 { margin: 0 0 10px; font-size: 14px; }
+.feedback-fields { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 .feedback-lane {
   align-self: flex-start;
   font-size: 13px;

@@ -287,8 +287,8 @@ function buildPlanner(ev) {
 }
 
 function buildFeedbackForm(ev) {
-  const details = el('details', { class: 'feedback-form' });
-  details.appendChild(el('summary', { text: '📝 How did this one actually go? Tell us' }));
+  const wrap = el('div', { class: 'feedback-form' });
+  wrap.appendChild(el('h4', { text: '📝 How did this one actually go?' }));
 
   const laneSelect = el('select', { class: 'feedback-lane' }, [
     el('option', { value: 'General' }, ['General']),
@@ -329,9 +329,9 @@ function buildFeedbackForm(ev) {
     }
   });
 
-  details.appendChild(el('div', { class: 'feedback-fields' }, [laneSelect, textarea, submitBtn]));
-  details.appendChild(statusEl);
-  return details;
+  wrap.appendChild(el('div', { class: 'feedback-fields' }, [laneSelect, textarea, submitBtn]));
+  wrap.appendChild(statusEl);
+  return wrap;
 }
 
 function buildDetailsTable(name, segments) {

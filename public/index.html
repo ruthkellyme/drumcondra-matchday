@@ -3,21 +3,22 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Drumcondra Match Day Watch 🏟️</title>
+<title>Drumcondra Match Day Watch</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="page-header">
-    <h1>Drumcondra Match Day Watch 🏟️</h1>
+    <h1>Drumcondra Match Day Watch</h1>
     <p class="subtitle">
       Unofficial, best-guess estimates of when your road, your parking and the footpaths outside will feel a Croke
       Park crowd — built on top of the real notices at
       <a href="https://crokepark.ie/communityinfo" target="_blank" rel="noopener">crokepark.ie/communityinfo</a>.
+      Scroll down to check whether your own plans will clash, or tell us how a match day actually went.
     </p>
     <nav class="site-nav" aria-label="Site">
-      <a href="index.html" class="site-nav-link is-active" aria-current="page">🏟️ Match Watch</a>
-      <a href="roads.html" class="site-nav-link">🗺️ Road Closures</a>
-      <a href="season.html" class="site-nav-link">🗓️ Full Season</a>
+      <a href="index.html" class="site-nav-link is-active" aria-current="page">Match Watch</a>
+      <a href="roads.html" class="site-nav-link">Road Closures</a>
+      <a href="season.html" class="site-nav-link">Full Season</a>
     </nav>
     <div class="meta-row">
       <button id="refresh-btn" type="button">Refresh</button>
@@ -27,16 +28,16 @@
   </header>
 
   <main>
+    <section id="events" aria-live="polite">
+      <p class="muted">Loading upcoming events…</p>
+    </section>
+
     <section class="legend" aria-label="Status legend">
       <span class="legend-item"><span class="swatch good"></span>Open / available / normal</span>
       <span class="legend-item"><span class="swatch warning"></span>Restricted / partial / busy</span>
       <span class="legend-item"><span class="swatch critical"></span>Closed / maxed out / very busy</span>
       <span class="legend-item"><span class="swatch critical striped"></span>Closed, but resident pass still gets through</span>
       <span class="legend-note">"Croke Park" = their own published time. "Est." = our best guess — tell us how it actually went and we'll tune it.</span>
-    </section>
-
-    <section id="events" aria-live="polite">
-      <p class="muted">Loading upcoming events…</p>
     </section>
 
     <section id="day-tools" class="event-card" hidden>
