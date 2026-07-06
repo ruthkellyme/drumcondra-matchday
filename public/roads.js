@@ -16,7 +16,11 @@ const MAP_STATUS_HEX = { good: '#0ca30c', critical: '#d03b3b' };
 function initLeafletMap(mapId, mapData) {
   const container = document.getElementById(mapId);
   if (!container || typeof L === 'undefined') return;
-  const map = L.map(container, { scrollWheelZoom: true }).setView([mapData.center.lat, mapData.center.lon], 15);
+  const map = L.map(container, { scrollWheelZoom: true, zoomControl: false }).setView([mapData.center.lat, mapData.center.lon], 15);
+  // Both top corners sit under the full-width overlay bar, and bottom-left is
+  // the legend chip's spot — bottom-right is the only free corner.
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
   // CARTO's light basemap instead of the standard OSM tiles — the standard
   // style bakes in red-cross pharmacy/hospital icons that look confusingly
   // similar to our own red closure markers. This one is deliberately plain
@@ -50,40 +54,39 @@ function initLeafletMap(mapId, mapData) {
       }).addTo(map).bindPopup(popupEl);
     }
   });
+
+  setTimeout(() => map.invalidateSize(), 100);
 }
 
-function buildMap(ev) {
-  const mapId = 'road-map';
-  const mapDiv = el('div', { class: 'road-map road-map-large', id: mapId });
-  const legend = el('div', { class: 'map-legend' }, [
-    el('span', { class: 'legend-item' }, [el('span', { class: 'swatch critical' }), 'Closed to through-traffic']),
-    el('span', { class: 'legend-item' }, [el('span', { class: 'swatch good' }), 'Resident access maintained']),
+function buildLegendChip(ev) {
+  return el('div', { class: 'map-legend-chip' }, [
+    el('div', { class: 'map-legend-chip-swatches' }, [
+      el('span', { class: 'legend-item' }, [el('span', { class: 'swatch critical' }), 'Closed to through-traffic']),
+      el('span', { class: 'legend-item' }, [el('span', { class: 'swatch good' }), 'Resident access maintained']),
+    ]),
+    el('p', { class: 'map-caption', text: `Based on the notice for ${ev.dayLabel}. Tap a line for details.` }),
   ]);
-  const caption = el('p', {
-    class: 'map-caption',
-    text: `Based on the notice for ${ev.dayLabel}. Tap a line for details.`,
-  });
-  const wrap = el('div', { class: 'road-map-wrap' }, [mapDiv, legend, caption]);
-  setTimeout(() => initLeafletMap(mapId, ev.map), 0);
-  return wrap;
 }
 
 async function loadRoadsMap() {
   const section = document.getElementById('road-map-section');
+  const mapPage = document.querySelector('.map-page');
   const warningsEl = document.getElementById('warnings');
   try {
     const res = await fetch('/api/events');
     const data = await res.json();
-    section.textContent = '';
 
     const withMap = (data.events || []).find((e) => e.map && e.map.markers && e.map.markers.length);
     if (!withMap) {
-      section.appendChild(el('p', { class: 'muted', text: 'No road closure data available right now — check crokepark.ie/communityinfo directly.' }));
+      section.textContent = '';
+      section.appendChild(el('p', { class: 'muted map-loading', text: 'No road closure data available right now — check crokepark.ie/communityinfo directly.' }));
       return;
     }
 
-    document.getElementById('source-note').textContent = `Last checked ${data.fetchedAt ? new Date(data.fetchedAt).toLocaleString() : ''}`;
-    section.appendChild(buildMap(withMap));
+    document.getElementById('source-note').textContent = data.fetchedAt ? `Last checked ${new Date(data.fetchedAt).toLocaleString()}.` : '';
+    section.textContent = '';
+    initLeafletMap('road-map-section', withMap.map);
+    mapPage.appendChild(buildLegendChip(withMap));
   } catch (err) {
     section.textContent = '';
     warningsEl.hidden = false;

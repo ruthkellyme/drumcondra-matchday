@@ -491,6 +491,12 @@ async function loadEvents() {
 
     if (past.length) {
       eventsEl.appendChild(el('h3', { class: 'past-events-header', text: 'Past — for reference' }));
+      if (!upcoming.length) {
+        eventsEl.appendChild(el('p', {
+          class: 'muted past-events-note',
+          text: "No upcoming event is published yet — this'll update as soon as Croke Park releases the details for the next one.",
+        }));
+      }
       past
         .sort((a, b) => b.date.localeCompare(a.date))
         .forEach((ev) => eventsEl.appendChild(renderEvent(ev, { isPast: true, todayISO })));

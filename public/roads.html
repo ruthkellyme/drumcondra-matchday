@@ -7,29 +7,30 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-  <header class="page-header">
-    <h1>Road Closures Map</h1>
-    <p class="subtitle">
+<body class="map-page-body">
+  <div class="map-page">
+    <div id="road-map-section" class="map-hero">
+      <p class="muted map-loading">Loading map…</p>
+    </div>
+
+    <header class="map-overlay-bar">
+      <span class="map-overlay-title">Road Closures</span>
+      <nav class="site-nav site-nav--overlay" aria-label="Site">
+        <a href="index.html" class="site-nav-link">Match Watch</a>
+        <a href="roads.html" class="site-nav-link is-active" aria-current="page">Road Closures</a>
+        <a href="season.html" class="site-nav-link">Full Season</a>
+      </nav>
+    </header>
+
+    <div id="warnings" class="warnings map-overlay-warnings" hidden></div>
+  </div>
+
+  <main class="map-page-info">
+    <p class="subtitle-block">
       Which roads around Croke Park close to through-traffic on a big match day, and which routes keep resident-pass
       access — this is the same core set of streets every event, so it lives on one page instead of repeating under
-      every match.
+      every match. <span id="source-note" class="muted"></span>
     </p>
-    <nav class="site-nav" aria-label="Site">
-      <a href="index.html" class="site-nav-link">Match Watch</a>
-      <a href="roads.html" class="site-nav-link is-active" aria-current="page">Road Closures</a>
-      <a href="season.html" class="site-nav-link">Full Season</a>
-    </nav>
-    <div class="meta-row">
-      <span id="source-note" class="muted"></span>
-    </div>
-    <div id="warnings" class="warnings" hidden></div>
-  </header>
-
-  <main>
-    <section id="road-map-section">
-      <p class="muted">Loading map…</p>
-    </section>
   </main>
 
   <div class="ad-discreet">

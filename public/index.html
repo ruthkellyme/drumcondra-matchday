@@ -20,10 +20,6 @@
       <a href="roads.html" class="site-nav-link">Road Closures</a>
       <a href="season.html" class="site-nav-link">Full Season</a>
     </nav>
-    <div class="meta-row">
-      <button id="refresh-btn" type="button">Refresh</button>
-      <span id="fetched-at" class="muted"></span>
-    </div>
     <div id="warnings" class="warnings" hidden></div>
   </header>
 
@@ -56,12 +52,10 @@
   </div>
 
   <footer class="page-footer">
-    <p class="muted">
-      Every time except the roads/parking start times is a heuristic guess, not official data — see
-      <a href="https://crokepark.ie/communityinfo" target="_blank" rel="noopener">Croke Park's own notice</a>
-      for the confirmed details. Assumptions live in <code>lib/config.js</code> and are meant to be tuned as you see
-      how each match day actually plays out.
-    </p>
+    <div class="meta-row">
+      <button id="refresh-btn" type="button">Refresh</button>
+      <span id="fetched-at" class="muted"></span>
+    </div>
   </footer>
 
   <div id="tooltip" class="tooltip" role="tooltip" hidden></div>
