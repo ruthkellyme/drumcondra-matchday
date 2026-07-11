@@ -27,17 +27,25 @@ function monthOf(dateLabel) {
   return m ? m[0] : '';
 }
 
+function moonIcon() {
+  const span = el('span', { class: 'icon icon-moon' });
+  span.innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+  return span;
+}
+
 function renderFixtureRow(f) {
   const status = IMPACT_STATUS[f.impactGuess] || 'warning';
   // Concert time isn't in the source data, but touring gigs at Croke Park are
   // reliably an evening/night show — worth flagging since that's a different
   // disruption pattern (late crowds, dark) than a GAA match, most of which
   // (though not all — some league fixtures are evening too) play by day.
-  const fixtureText = f.isConcert ? `${f.fixture} — 🌙 evening/night gig` : f.fixture;
+  const fixtureSpan = f.isConcert
+    ? el('span', { class: 'season-fixture' }, [`${f.fixture} — `, moonIcon(), ' evening/night gig'])
+    : el('span', { class: 'season-fixture', text: f.fixture });
   const row = el('div', { class: 'season-row' }, [
     el('span', { class: 'season-date', text: f.dateLabel }),
     el('span', { class: `swatch ${status}` }),
-    el('span', { class: 'season-fixture', text: fixtureText }),
+    fixtureSpan,
   ]);
   if (f.hasDetailedEstimate) {
     row.appendChild(el('a', { class: 'season-link', href: 'index.html' }, ['See detailed estimate →']));

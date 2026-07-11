@@ -1,52 +1,50 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Lato:wght@400;700&display=swap');
-
+/* Ordnance-survey map paper, Drumcondra brick, stadium signage — a
+   deliberate fixed identity, not a theme that follows the OS's light/dark
+   preference, so there's no prefers-color-scheme variant here. */
 :root {
-  --brand: #00577c;       /* Croke Park teal-navy */
-  --brand-dark: #003c56;
-  --surface-1: #fcfcfb;
-  --page-plane: #f9f9f7;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --muted: #898781;
-  --gridline: #e1e0d9;
-  --border: rgba(11, 11, 11, 0.10);
-  --status-good: #0ca30c;
-  --status-warning: #fab219;
-  --status-serious: #ec835a;
-  --status-critical: #d03b3b;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --brand: #1c7ba8;
-    --brand-dark: #0d5372;
-    --surface-1: #1a1a19;
-    --page-plane: #0d0d0d;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --muted: #898781;
-    --gridline: #2c2c2a;
-    --border: rgba(255, 255, 255, 0.10);
-    --status-good: #0ca30c;
-    --status-warning: #fab219;
-    --status-serious: #ec835a;
-    --status-critical: #d03b3b;
-  }
+  --brand: #143f5c;        /* stadium navy, lighter — links, hover accents */
+  --brand-dark: #0B2E44;   /* stadium navy — header/nav */
+  --surface-1: #fffefb;
+  --page-plane: #F7F5F1;   /* paper */
+  --text-primary: #1E2A2E;
+  --text-secondary: #5B6B66;
+  --muted: #5B6B66;
+  --gridline: #e2ded3;
+  --border: rgba(30, 42, 46, 0.12);
+  --status-good: #2F6B4F;      /* open */
+  --status-warning: #C9812E;   /* restricted */
+  --status-serious: #B4562E;   /* between restricted and closed */
+  --status-critical: #A13A2F;  /* closed — brick red */
+  --hatch-stripe: #C9634F;     /* closed-but-pass hatch stripe */
 }
 
 * { box-sizing: border-box; }
 
 body {
   margin: 0;
-  background: var(--page-plane);
+  background-color: var(--page-plane);
+  /* Faint ordnance-survey-style grid behind all page content. */
+  background-image:
+    linear-gradient(rgba(11, 46, 68, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 46, 68, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
   color: var(--text-primary);
-  font-family: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: Inter, "Public Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.5;
 }
 
-h1, h2, h3, summary {
-  font-family: Montserrat, Helvetica, Arial, sans-serif;
-  font-weight: 700;
+h1, h2, h3, summary, .day-heading {
+  font-family: 'Fraunces', Georgia, serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Kick-off/full-time badges, exact-time-list entries, axis ticks — clock
+   readings get the mono treatment so they read as data, not prose. Prose
+   surrounding a time (team names, "ends ~...") stays in the body font. */
+.kickoff-flag, .final-whistle-flag, .now-flag, .phase-time, .tick {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
 }
 
 a { color: var(--brand); }
@@ -58,7 +56,7 @@ a { color: var(--brand); }
   padding: 28px 20px 54px;
 }
 .page-header h1 { margin: 0 0 8px; font-size: 28px; }
-.page-header a { color: #ffffff; text-decoration: underline; }
+.subtitle a { color: #ffffff; text-decoration: underline; }
 .subtitle { max-width: 600px; margin: 0 0 14px; color: rgba(255,255,255,0.9); font-size: 14px; }
 
 /* Site-wide navigation, styled and positioned like a distinct wayfinding
@@ -73,7 +71,7 @@ a { color: var(--brand); }
   margin: 0;
 }
 .site-nav-link {
-  font-family: Montserrat, sans-serif;
+  font-family: Inter, sans-serif;
   font-weight: 700;
   font-size: 11px;
   letter-spacing: 0.05em;
@@ -91,7 +89,7 @@ a { color: var(--brand); }
 .meta-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
 
 button {
-  font-family: Montserrat, sans-serif;
+  font-family: Inter, sans-serif;
   font-weight: 600;
   font-size: 13px;
   background: #ffffff;
@@ -139,7 +137,7 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
 .swatch.serious { background: var(--status-serious); clip-path: polygon(50% 0%, 0% 100%, 100% 100%); }
 .swatch.critical { background: var(--status-critical); border-radius: 2px; }
 .swatch.critical.striped {
-  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.32) 0, rgba(255,255,255,0.32) 2px, transparent 2px, transparent 5px);
+  background-image: repeating-linear-gradient(45deg, var(--status-critical) 0, var(--status-critical) 3px, var(--hatch-stripe) 3px, var(--hatch-stripe) 6px);
 }
 
 .event-card {
@@ -207,6 +205,14 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
   margin-bottom: 12px;
 }
 
+/* Minimal single-line icons, in place of emoji, throughout the event card —
+   sized/coloured to sit inline with whatever text they lead. */
+.icon { display: inline-flex; vertical-align: -3px; }
+.icon svg { display: block; }
+.review-banner .icon, .icon-warning { color: var(--status-warning); }
+.tagline .icon, .icon-tier { color: var(--brand-dark); }
+h2 .icon-tier { vertical-align: -2px; }
+
 .past-events-header { color: var(--muted); font-size: 14px; margin: 8px 0 12px; }
 .event-card.past-event { opacity: 0.6; filter: grayscale(45%); }
 .past-banner {
@@ -237,6 +243,7 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
   position: absolute;
   top: 0;
   bottom: 0;
+  left: var(--pos);
   border-left: 2px dashed var(--brand-dark);
   z-index: 2;
   cursor: pointer;
@@ -263,6 +270,8 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
   position: absolute;
   top: 0;
   bottom: 0;
+  left: var(--from);
+  width: calc(var(--to) - var(--from));
   /* No fill — a tinted overlay muddies whatever status colour/texture is
      underneath (looked like a grubby smudge over the striped roads segment).
      The two bracket lines are enough to mark the range. */
@@ -288,15 +297,67 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
    on a narrow chart — drop every other one down a row instead of relying on
    there always being enough horizontal room. */
 .final-whistle-flag--low { bottom: -36px; }
+
+/* Solid, not dashed, and its own colour — this is the one line on the chart
+   that isn't an estimate or an official time, so it needs to read as visibly
+   different from the kick-off/final-whistle markers either side of it. */
+/* Near-black with a white halo either side so it reads against any of the
+   three status colours behind it, not just the grey it used to blend into. */
+.now-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: var(--pos);
+  border-left: 3px solid var(--text-primary);
+  box-shadow: -1px 0 0 #fff, 1px 0 0 #fff;
+  z-index: 3;
+  animation: nowPulse 2.4s ease-in-out infinite;
+}
+@keyframes nowPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.now-flag {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
+  background: var(--text-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  box-shadow: 0 0 0 2px #fff;
+}
 .final-whistle-band:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-.lane { display: grid; grid-template-columns: 82px 1fr; align-items: center; gap: 10px; margin-bottom: 6px; }
-.lane-name { font-size: 11px; color: var(--text-secondary); font-weight: 700; line-height: 1.2; }
-.lane-track { position: relative; height: 24px; background: var(--surface-1); border: 1px solid var(--gridline); border-radius: 4px; }
+.lane { position: relative; margin-bottom: 3px; }
+.lane-track { position: relative; height: 44px; background: var(--surface-1); border: 1px solid var(--gridline); border-radius: 4px; }
+/* Overlaid on the bar itself rather than a separate row — a dark chip so it
+   stays readable regardless of which status colour it happens to sit over. */
+.lane-name {
+  position: absolute;
+  z-index: 4;
+  top: 50%;
+  left: 8px;
+  transform: translateY(-50%);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #fff;
+  background: rgba(30, 42, 46, 0.6);
+  padding: 2px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+}
 .seg {
   position: absolute;
   top: 0;
   height: 100%;
+  left: var(--from);
+  width: calc(var(--to) - var(--from) - 2px);
   cursor: pointer;
 }
 .seg:first-child { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
@@ -304,21 +365,63 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
 .seg.status-good { background: var(--status-good); }
 .seg.status-warning { background: var(--status-warning); }
 .seg.status-critical { background: var(--status-critical); }
-/* Same red as a plain critical segment, but diagonal-striped: "closed to
-   through-traffic, EXCEPT resident-pass holders" vs a solid "no exceptions". */
-.seg.textured {
+/* Barrier tape look: diagonal stripes that scroll continuously, like tape
+   moving in the wind — the one visual cue that this segment means "closed,
+   except a resident pass," not a plain closure. */
+.seg.textured, .hatch-closed {
   background-image: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.32) 0,
-    rgba(255, 255, 255, 0.32) 4px,
-    transparent 4px,
-    transparent 10px
+    45deg, var(--status-critical), var(--status-critical) 10px, var(--hatch-stripe) 10px, var(--hatch-stripe) 20px
   );
+  background-size: 28px 28px;
+  animation: marchStripes 1.8s linear infinite;
+}
+@keyframes marchStripes {
+  from { background-position: 0 0; }
+  to { background-position: 28px 0; }
 }
 .seg:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
-.axis { position: relative; height: 16px; margin: 4px 0 14px 92px; }
-.axis .tick { position: absolute; top: 0; font-size: 10px; color: var(--muted); border-left: 1px solid var(--gridline); padding-left: 3px; height: 100%; }
+/* Bars fill in left to right, staggered, on first appearance and again each
+   time a day card scrolls back into view (see the IntersectionObserver in
+   app.js). Only ever applied to the coloured fill segments themselves —
+   never the KO/FT badges, Now line, labels, or legend, which must stay
+   visible and readable regardless of scroll position. */
+.timeline-segment {
+  transform-origin: left;
+  transform: scaleX(0);
+  opacity: 0;
+}
+.timeline-segment.play {
+  animation: fillIn 0.5s ease-out forwards;
+}
+/* A hatch-closed segment needs both animations running at once — fillIn
+   only touches transform/opacity, marchStripes only touches
+   background-position, so listing them together doesn't conflict. The
+   `animation` shorthand fully replaces any earlier declaration rather than
+   merging with it, so this has to be spelled out explicitly rather than
+   relying on the two single-animation rules to combine on their own. */
+.timeline-segment.play.textured {
+  animation: fillIn 0.5s ease-out forwards, marchStripes 1.8s linear infinite;
+}
+@keyframes fillIn {
+  to { transform: scaleX(1); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hatch-closed, .seg.textured, .now-marker, .now-line, .timeline-segment {
+    animation: none !important;
+  }
+  .timeline-segment {
+    transform: scaleX(1) !important;
+    opacity: 1 !important;
+  }
+  .now-marker, .now-line {
+    opacity: 1 !important;
+  }
+}
+
+.axis { position: relative; height: 16px; margin: 4px 0 14px; }
+.axis .tick { position: absolute; top: 0; left: var(--pos); font-size: 10px; color: var(--muted); border-left: 1px solid var(--gridline); padding-left: 3px; height: 100%; }
 
 .planner {
   background: var(--page-plane);
@@ -356,41 +459,6 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
 .planner-result--critical p:first-child { font-weight: 700; }
 .planner-suggestion { color: var(--brand-dark); font-weight: 600; }
 
-.feedback-form {
-  background: var(--page-plane);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px 16px;
-}
-.feedback-form h4 { margin: 0 0 10px; font-size: 14px; }
-.feedback-fields { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
-.feedback-lane {
-  align-self: flex-start;
-  font-size: 13px;
-  padding: 5px 8px;
-  border: 1px solid var(--gridline);
-  border-radius: 6px;
-  background: var(--surface-1);
-  color: var(--text-primary);
-}
-.feedback-message {
-  font-size: 14px;
-  font-family: inherit;
-  padding: 8px 10px;
-  border: 1px solid var(--gridline);
-  border-radius: 6px;
-  background: var(--surface-1);
-  color: var(--text-primary);
-  resize: vertical;
-}
-.feedback-form button {
-  align-self: flex-start;
-  background: var(--brand);
-  color: #fff;
-}
-.feedback-form button:hover { background: var(--brand-dark); }
-.feedback-status:empty { display: none; }
-
 .details-table { margin-top: 10px; }
 .phase-group { margin-top: 14px; }
 .phase-group h4 { margin: 0 0 4px; font-size: 12px; font-weight: 700; color: var(--text-secondary); }
@@ -423,7 +491,66 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
 details summary { cursor: pointer; color: var(--brand); font-size: 13px; margin-top: 6px; }
 
 .map-popup { font-size: 13px; max-width: 220px; }
-.stadium-icon { font-size: 20px; line-height: 24px; text-align: center; }
+.stadium-icon { display: flex; align-items: center; justify-content: center; }
+.stadium-label {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--brand-dark);
+  background: rgba(255, 255, 255, 0.88);
+  padding: 3px 10px;
+  border-radius: 5px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+/* Leaflet's default .leaflet-div-icon draws a white square + grey border
+   behind every divIcon — our own icons draw their own shape (a circle or an
+   emoji) so that default square must not show through the gaps. */
+.stadium-icon.leaflet-div-icon,
+.entrance-icon.leaflet-div-icon,
+.barrier-icon.leaflet-div-icon {
+  background: transparent;
+  border: none;
+}
+
+.entrance-icon-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--status-good);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px #fff, 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+.entrance-icon-arrow {
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 8px solid #fff;
+  margin-left: 2px;
+}
+.barrier-icon { display: flex; align-items: center; justify-content: center; color: var(--status-warning); }
+.map-pin-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: #fff;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+.legend-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; color: var(--status-warning); }
+.legend-icon-entrance {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--status-good);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.legend-icon-entrance .entrance-icon-arrow { border-top-width: 3px; border-bottom-width: 3px; border-left-width: 5px; margin-left: 1px; }
 
 /* Road Closures page — the map IS the page, not a card inside one. Full
    bleed under a slim floating nav strip, with a legend chip docked over the
@@ -450,7 +577,7 @@ details summary { cursor: pointer; color: var(--brand); font-size: 13px; margin-
   background: linear-gradient(180deg, rgba(0, 40, 58, 0.88), rgba(0, 40, 58, 0));
 }
 .map-overlay-title {
-  font-family: Montserrat, sans-serif;
+  font-family: Inter, sans-serif;
   font-weight: 700;
   font-size: 15px;
   color: #fff;
@@ -484,7 +611,7 @@ details summary { cursor: pointer; color: var(--brand); font-size: 13px; margin-
 .map-caption { font-size: 11px; color: var(--muted); margin: 6px 0 0; }
 
 .map-page-info { max-width: 880px; margin: 0 auto; padding: 18px 20px 0; }
-.subtitle-block { font-size: 14px; color: var(--text-secondary); margin: 0; }
+.subtitle-block { font-size: 14px; color: var(--text-secondary); margin: 0; text-align: center; padding: 6px 12px; }
 
 @media (max-width: 600px) {
   .map-page { height: 68vh; }
@@ -506,15 +633,34 @@ details summary { cursor: pointer; color: var(--brand); font-size: 13px; margin-
 }
 .tooltip strong { display: block; }
 
-.ad-discreet {
+/* Stadium navy, matching the header — a deliberate fixed band, not
+   something that follows prefers-color-scheme. Body is a column flexbox
+   with the main content area allowed to grow (see `main` below), so this
+   sits flush against the bottom of the viewport even on a short page,
+   rather than floating above leftover page background. */
+.site-footer {
+  background: var(--brand-dark);
+  padding: 22px 20px;
+}
+.shoutout {
   max-width: 880px;
-  margin: 0 auto 20px;
-  padding: 10px 20px;
-  font-size: 12px;
-  color: var(--muted);
+  margin: 0 auto;
+  font-size: 16px;
+  font-weight: 600;
+  color: #f5f5f2;
   text-align: center;
 }
-.ad-discreet a { color: var(--brand); }
+.shoutout a { color: #8fd2f2; }
+.meta-row--footer { justify-content: center; margin-top: 16px; }
+/* A ghost button on navy, not the plain white pill used elsewhere — that
+   read as an unstyled leftover sitting on the footer's stadium-signage band. */
+.meta-row--footer button {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+.meta-row--footer button:hover { background: rgba(255, 255, 255, 0.12); }
+.site-footer .muted { color: rgba(245, 245, 242, 0.75); }
 
 .page-footer { max-width: 880px; margin: 0 auto; padding: 0 20px 30px; }
 
@@ -548,4 +694,109 @@ html, body { overflow-x: hidden; }
   .phase-time { flex: 0 0 auto; order: 2; font-size: 11px; }
   .phase-label { flex: 1 1 100%; order: 1; }
   .phase-source { order: 3; margin-left: auto; }
+}
+
+/* Phone-size: the timeline rotates 90° — time flows top-to-bottom down three
+   side-by-side columns (Roads / Parking / Foot traffic) instead of
+   left-to-right along three stacked rows. Every position is still driven by
+   the same --pos/--from/--to custom properties the JS already sets (see
+   setPos/setRange in app.js) — only which CSS property reads them changes,
+   so no JS branching is needed for this to work, including on rotation. */
+@media (max-width: 480px) {
+  .timeline-group { display: flex; flex-direction: row; align-items: stretch; gap: 6px; }
+
+  /* Bars fill downward, not rightward, to match time now flowing
+     top-to-bottom rather than left-to-right. */
+  .timeline-segment { transform-origin: top; transform: scaleY(0); }
+  .timeline-segment.play { animation: fillInVertical 0.5s ease-out forwards; }
+  .timeline-segment.play.textured {
+    animation: fillInVertical 0.5s ease-out forwards, marchStripes 1.8s linear infinite;
+  }
+  @keyframes fillInVertical {
+    to { transform: scaleY(1); opacity: 1; }
+  }
+
+  .lanes-wrapper {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+    height: 420px;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .lane { flex: 1 1 0; height: 100%; margin-bottom: 0; }
+  .lane-track { width: 100%; height: 100%; }
+  .lane-name {
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .seg {
+    left: 0;
+    top: var(--from);
+    width: 100%;
+    height: calc(var(--to) - var(--from) - 2px);
+  }
+  .seg:first-child { border-radius: 4px 4px 0 0; }
+  .seg:last-child { border-radius: 0 0 4px 4px; }
+
+  /* Kick-off/final-whistle/Now markers become horizontal lines spanning all
+     three columns, instead of vertical lines spanning all three rows. */
+  .kickoff-marker, .now-marker {
+    left: 0;
+    right: 0;
+    top: var(--pos);
+    bottom: auto;
+    height: 0;
+    border-left: none;
+    border-top: 2px dashed var(--brand-dark);
+  }
+  .now-marker { border-top: 3px solid var(--text-primary); box-shadow: 0 -1px 0 #fff, 0 1px 0 #fff; }
+  .kickoff-flag, .now-flag {
+    top: 0;
+    left: auto;
+    right: 0;
+    transform: translate(100%, -50%);
+  }
+
+  .final-whistle-band {
+    left: 0;
+    right: 0;
+    top: var(--from);
+    width: 100%;
+    height: calc(var(--to) - var(--from));
+    border-left: none;
+    border-right: none;
+    border-top: 2px dashed var(--brand-dark);
+    border-bottom: 2px dashed var(--brand-dark);
+  }
+  .final-whistle-flag {
+    bottom: auto;
+    top: 0;
+    left: 100%;
+    transform: translate(4px, -50%);
+  }
+  .final-whistle-flag--low { bottom: auto; left: 100%; top: 100%; }
+
+  /* Axis moves from a strip below the chart to a strip beside it, ticks
+     positioned by --pos the same way as everywhere else on this chart. */
+  .axis {
+    flex: 0 0 46px;
+    position: relative;
+    height: auto;
+    margin: 0;
+  }
+  .axis .tick {
+    left: 0;
+    top: var(--pos);
+    border-left: none;
+    border-top: 1px solid var(--gridline);
+    padding-left: 4px;
+    padding-top: 2px;
+    height: auto;
+    width: 100%;
+  }
 }

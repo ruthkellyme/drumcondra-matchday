@@ -4,6 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Drumcondra Match Day Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -13,7 +16,6 @@
       Unofficial, best-guess estimates of when your road, your parking and the footpaths outside will feel a Croke
       Park crowd — built on top of the real notices at
       <a href="https://crokepark.ie/communityinfo" target="_blank" rel="noopener">crokepark.ie/communityinfo</a>.
-      Scroll down to check whether your own plans will clash, or tell us how a match day actually went.
     </p>
     <nav class="site-nav" aria-label="Site">
       <a href="index.html" class="site-nav-link is-active" aria-current="page">Match Watch</a>
@@ -33,7 +35,7 @@
       <span class="legend-item"><span class="swatch warning"></span>Restricted / partial / busy</span>
       <span class="legend-item"><span class="swatch critical"></span>Closed / maxed out / very busy</span>
       <span class="legend-item"><span class="swatch critical striped"></span>Closed, but resident pass still gets through</span>
-      <span class="legend-note">"Croke Park" = their own published time. "Est." = our best guess — tell us how it actually went and we'll tune it.</span>
+      <span class="legend-note">"Croke Park" = their own published time. "Est." = our best guess.</span>
     </section>
 
     <section id="day-tools" class="event-card" hidden>
@@ -43,16 +45,14 @@
     </section>
   </main>
 
-  <div class="ad-discreet">
-    🏺 Made by a Drumcondra local to make my own life easier — hope it's useful for you too. Give me a follow on
-    Instagram if you found it handy:
-    <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
-    · <a href="https://pucaceramics.com/" target="_blank" rel="noopener">Púca Ceramics</a>
-    · <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
-  </div>
-
-  <footer class="page-footer">
-    <div class="meta-row">
+  <footer class="site-footer">
+    <p class="shoutout">
+      This website was made by Ruth, a local resident. If you like this website, give me a follow on Instagram:
+      <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
+      · <a href="https://pucaceramics.com/" target="_blank" rel="noopener">Púca Ceramics</a>
+      · <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
+    </p>
+    <div class="meta-row meta-row--footer">
       <button id="refresh-btn" type="button">Refresh</button>
       <span id="fetched-at" class="muted"></span>
     </div>

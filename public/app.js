@@ -58,14 +58,17 @@ function pct(min, windowStart, windowEnd) {
   return ((min - windowStart) / (windowEnd - windowStart)) * 100;
 }
 
-// Matches .lane's `82px label + 10px gap` before the track starts, so
-// kickoff markers (positioned relative to the whole lanes-wrapper) line up
-// with the lane tracks and the axis ticks underneath them.
-const LANE_OFFSET_PX = 92;
-
-function leftWithLaneOffset(min, windowStart, windowEnd) {
-  const p = pct(min, windowStart, windowEnd) / 100;
-  return `calc(${LANE_OFFSET_PX}px + (100% - ${LANE_OFFSET_PX}px) * ${p.toFixed(4)})`;
+// Position via a CSS custom property rather than setting `left`/`top`
+// directly — the default (horizontal) CSS reads --pos as `left`, and the
+// phone-breakpoint CSS re-reads the exact same value as `top` instead, so
+// the whole chart can flip to a vertical, time-flows-downward layout on a
+// narrow screen without any JS having to know or care which mode is active.
+function setPos(elm, percent) {
+  elm.style.setProperty('--pos', `${percent}%`);
+}
+function setRange(elm, fromPercent, toPercent) {
+  elm.style.setProperty('--from', `${fromPercent}%`);
+  elm.style.setProperty('--to', `${toPercent}%`);
 }
 
 function el(tag, props = {}, children = []) {
@@ -81,6 +84,41 @@ function el(tag, props = {}, children = []) {
   }
   return node;
 }
+
+// Minimal single-line (stroke-only) icons in place of emoji — one shared
+// path set per concept, sized/coloured via CSS on the wrapping <span class="icon">.
+const ICON_PATHS = {
+  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
+  check: '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
+  warning: '<path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4"/><path d="M12 16.5h.01"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 3v4"/><path d="M16 3v4"/>',
+  car: '<path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11"/><rect x="3" y="11" width="18" height="6" rx="2"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/>',
+  dog: '<circle cx="8" cy="8" r="1.4"/><circle cx="12" cy="6" r="1.4"/><circle cx="16" cy="8" r="1.4"/><path d="M9 14a3 3 0 0 1 6 0c0 2-1.5 3-3 3s-3-1-3-3z"/>',
+  cart: '<path d="M6 7h15l-1.5 9a2 2 0 0 1-2 1.7H9.3a2 2 0 0 1-2-1.7L6 7z"/><path d="M6 7 5 3H3"/><circle cx="10" cy="20" r="1"/><circle cx="17" cy="20" r="1"/>',
+};
+
+function icon(name, extraClass = '') {
+  const span = el('span', { class: `icon icon-${name}${extraClass ? ' ' + extraClass : ''}` });
+  span.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[name] || ''}</svg>`;
+  return span;
+}
+
+// A 4-bar gauge, `level` (1-4) bars filled — replaces the old tier emoji
+// (😌🙂😬🏟️), same "how much" reading without needing a distinct glyph shape.
+function tierIcon(level) {
+  const bars = [6, 10, 14, 18].map((h, i) => {
+    const x = 3 + i * 5.5;
+    const y = 20 - h;
+    const filled = i < level;
+    return `<rect x="${x}" y="${y}" width="3.5" height="${h}" rx="1" ${filled ? 'fill="currentColor" stroke="none"' : 'fill="none"'} />`;
+  }).join('');
+  const span = el('span', { class: 'icon icon-tier' });
+  span.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="1.5">${bars}</svg>`;
+  return span;
+}
+
+const TIER_ICON_LEVEL = { 'tier-1': 1, 'tier-2': 2, 'tier-3': 3, 'tier-4': 4 };
+const PREP_ICON = { car: 'car', dog: 'dog', cart: 'cart' };
 
 function showTooltip(target, text) {
   tooltipEl.textContent = text;
@@ -102,7 +140,7 @@ function buildAxis(windowStart, windowEnd) {
   let t = Math.ceil(windowStart / step) * step;
   for (; t <= windowEnd; t += step) {
     const tick = el('span', { class: 'tick', text: formatClock12(t) });
-    tick.style.left = `${pct(t, windowStart, windowEnd)}%`;
+    setPos(tick, pct(t, windowStart, windowEnd));
     axis.appendChild(tick);
   }
   return axis;
@@ -111,10 +149,7 @@ function buildAxis(windowStart, windowEnd) {
 function buildFinalWhistleBand(range, windowStart, windowEnd, stagger) {
   if (!range) return null;
   const band = el('div', { class: 'final-whistle-band', tabindex: '0' });
-  const leftPct = pct(range.fromMin, windowStart, windowEnd);
-  const rightPct = pct(range.toMin, windowStart, windowEnd);
-  band.style.left = leftWithLaneOffset(range.fromMin, windowStart, windowEnd);
-  band.style.width = `calc((100% - ${LANE_OFFSET_PX}px) * ${((rightPct - leftPct) / 100).toFixed(4)})`;
+  setRange(band, pct(range.fromMin, windowStart, windowEnd), pct(range.toMin, windowStart, windowEnd));
   band.appendChild(el('span', {
     class: `final-whistle-flag${stagger ? ' final-whistle-flag--low' : ''}`,
     text: `FT ~${formatClock12(range.fromMin)}–${formatClock12(range.toMin)}`,
@@ -131,12 +166,13 @@ function buildFinalWhistleBand(range, windowStart, windowEnd, stagger) {
 function buildKickoffMarkers(fixtures, windowStart, windowEnd) {
   return fixtures.filter((f) => f.time).map((f) => {
     const min = f.time.hour * 60 + f.time.minute;
+    const koTime = formatClock12(min);
     const marker = el('div', { class: 'kickoff-marker', tabindex: '0' });
-    marker.style.left = leftWithLaneOffset(min, windowStart, windowEnd);
-    marker.appendChild(el('span', { class: 'kickoff-flag', text: `KO ${f.timeText}` }));
+    setPos(marker, pct(min, windowStart, windowEnd));
+    marker.appendChild(el('span', { class: 'kickoff-flag', text: `KO ${koTime}` }));
     const tooltipText = f.home && f.away
-      ? `Kick-off ${f.timeText} — ${f.home} v ${f.away}${f.competition ? ` (${f.competition})` : ''}`
-      : `Kick-off ${f.timeText}`;
+      ? `Kick-off ${koTime} — ${f.home} v ${f.away}${f.competition ? ` (${f.competition})` : ''}`
+      : `Kick-off ${koTime}`;
     marker.addEventListener('mouseenter', () => showTooltip(marker, tooltipText));
     marker.addEventListener('focus', () => showTooltip(marker, tooltipText));
     marker.addEventListener('mouseleave', hideTooltip);
@@ -145,15 +181,26 @@ function buildKickoffMarkers(fixtures, windowStart, windowEnd) {
   });
 }
 
+// Only meaningful for today's own card — a "now" line on a future or past
+// day's timeline would just be confusing, not useful.
+function buildNowMarker(windowStart, windowEnd) {
+  const now = new Date();
+  const minutesNow = now.getHours() * 60 + now.getMinutes();
+  if (minutesNow < windowStart || minutesNow > windowEnd) return null;
+  const marker = el('div', { class: 'now-marker now-line' });
+  setPos(marker, pct(minutesNow, windowStart, windowEnd));
+  marker.appendChild(el('span', { class: 'now-flag', text: 'Now' }));
+  return marker;
+}
+
 function buildLane(name, segments, windowStart, windowEnd) {
   const track = el('div', { class: 'lane-track' });
   segments.forEach((seg, i) => {
     const seg_el = el('div', {
-      class: `seg status-${seg.status}${seg.texture ? ' textured' : ''}`,
+      class: `seg timeline-segment status-${seg.status}${seg.texture ? ' textured' : ''}`,
       tabindex: '0',
     });
-    seg_el.style.left = `${pct(seg.fromMin, windowStart, windowEnd)}%`;
-    seg_el.style.width = `calc(${pct(seg.toMin, windowStart, windowEnd) - pct(seg.fromMin, windowStart, windowEnd)}% - 2px)`;
+    setRange(seg_el, pct(seg.fromMin, windowStart, windowEnd), pct(seg.toMin, windowStart, windowEnd));
     const timeRange = formatTimeRange(seg, i === 0, i === segments.length - 1);
     const tooltipText = `${seg.label}${seg.note ? ' — ' + seg.note : ''} · ${timeRange}${seg.official ? ' · Official info' : ' · Estimate'}`;
     seg_el.addEventListener('mouseenter', () => showTooltip(seg_el, tooltipText));
@@ -163,8 +210,8 @@ function buildLane(name, segments, windowStart, windowEnd) {
     track.appendChild(seg_el);
   });
   return el('div', { class: 'lane' }, [
-    el('span', { class: 'lane-name', text: name }),
     track,
+    el('span', { class: 'lane-name', text: name }),
   ]);
 }
 
@@ -220,7 +267,7 @@ function findBestWindow(ev, durationMin, preferredMin) {
 
 function buildPlanner(ev) {
   const wrap = el('div', { class: 'planner' });
-  wrap.appendChild(el('h4', { text: '🤔 Check a time' }));
+  wrap.appendChild(el('h4', {}, [icon('clock'), ' Check a time']));
 
   const timeInput = el('input', { type: 'time', class: 'planner-time', value: '13:00' });
   const durationSelect = el('select', { class: 'planner-duration' }, [
@@ -262,10 +309,15 @@ function buildPlanner(ev) {
     resultEl.className = `planner-result planner-result--${overall}`;
 
     if (overall === 'good') {
-      resultEl.appendChild(el('p', { text: `✅ Grand, go for it — ${formatClock12(startMin)}–${formatClock12(endMin)} looks clear on roads, parking and foot traffic.` }));
+      resultEl.appendChild(el('p', {}, [
+        icon('check'), ` Grand, go for it — ${formatClock12(startMin)}–${formatClock12(endMin)} looks clear on roads, parking and foot traffic.`,
+      ]));
     } else {
-      const verb = overall === 'critical' ? "🔴 I'd hold off" : '🟡 Doable, but';
-      resultEl.appendChild(el('p', { text: `${verb} — here's what's going on ${formatClock12(startMin)}–${formatClock12(endMin)}:` }));
+      const verbIcon = overall === 'critical' ? icon('warning') : el('span', { class: 'swatch warning' });
+      const verb = overall === 'critical' ? "I'd hold off" : 'Doable, but';
+      resultEl.appendChild(el('p', {}, [
+        verbIcon, ` ${verb} — here's what's going on ${formatClock12(startMin)}–${formatClock12(endMin)}:`,
+      ]));
       const ul = el('ul');
       perLane.filter((l) => l.worst !== 'good').forEach((l) => {
         ul.appendChild(el('li', { text: `${l.name}: ${l.label}` }));
@@ -283,54 +335,6 @@ function buildPlanner(ev) {
 
   wrap.appendChild(form);
   wrap.appendChild(resultEl);
-  return wrap;
-}
-
-function buildFeedbackForm(ev) {
-  const wrap = el('div', { class: 'feedback-form' });
-  wrap.appendChild(el('h4', { text: '📝 How did this one actually go?' }));
-
-  const laneSelect = el('select', { class: 'feedback-lane' }, [
-    el('option', { value: 'General' }, ['General']),
-    el('option', { value: 'Roads' }, ['Roads']),
-    el('option', { value: 'Parking' }, ['Parking']),
-    el('option', { value: 'Foot traffic' }, ['Foot traffic']),
-  ]);
-  const textarea = el('textarea', {
-    class: 'feedback-message',
-    rows: '3',
-    placeholder: "e.g. \"Russell Street didn't actually reopen until well after 8pm\"",
-  });
-  const submitBtn = el('button', { type: 'button' }, ['Send']);
-  const statusEl = el('p', { class: 'feedback-status muted' });
-
-  submitBtn.addEventListener('click', async () => {
-    const message = textarea.value.trim();
-    if (!message) {
-      statusEl.textContent = 'Pop in a few words first.';
-      return;
-    }
-    submitBtn.disabled = true;
-    statusEl.textContent = 'Sending…';
-    try {
-      const res = await fetch('/api/feedback', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventId: ev.id, dayLabel: ev.dayLabel, lane: laneSelect.value, message }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Something went wrong');
-      statusEl.textContent = "Thanks — noted, and it'll help tune the next estimate.";
-      textarea.value = '';
-    } catch (err) {
-      statusEl.textContent = `Couldn't send that (${err.message}).`;
-    } finally {
-      submitBtn.disabled = false;
-    }
-  });
-
-  wrap.appendChild(el('div', { class: 'feedback-fields' }, [laneSelect, textarea, submitBtn]));
-  wrap.appendChild(statusEl);
   return wrap;
 }
 
@@ -357,15 +361,14 @@ function buildExactTimes(ev) {
   return details;
 }
 
-// Planner / feedback apply to one specific day's data, but living inside a
-// shared section (picked via a day dropdown) rather than duplicated inside
-// every match card keeps the core "what's happening" timeline the focus.
+// The planner applies to one specific day's data, but lives inside a shared
+// section (picked via a day dropdown) rather than duplicated inside every
+// match card, keeping the core "what's happening" timeline the focus.
 // "Show exact times as a list" stays inside each card, next to the chart it
 // explains, rather than moving down here with the interactive tools.
 function buildDayTools(ev) {
   const wrap = el('div', { class: 'day-tools-content' });
   wrap.appendChild(buildPlanner(ev));
-  wrap.appendChild(buildFeedbackForm(ev));
   return wrap;
 }
 
@@ -377,11 +380,11 @@ function relativePastLabel(dateISO, todayISO) {
 }
 
 function renderEvent(ev, { isPast = false, todayISO = null } = {}) {
-  const card = el('div', { class: `event-card${ev.needsReview ? ' needs-review' : ''}${isPast ? ' past-event' : ''}` });
-  card.appendChild(el('h2', { text: `${ev.tier ? ev.tier.emoji + ' ' : ''}${ev.dayLabel}` }));
+  const card = el('div', { class: `event-card day-card${ev.needsReview ? ' needs-review' : ''}${isPast ? ' past-event' : ''}` });
+  card.appendChild(el('h2', {}, ev.tier ? [tierIcon(TIER_ICON_LEVEL[ev.tier.icon] || 1), ' ', ev.dayLabel] : [ev.dayLabel]));
 
   if (isPast) {
-    card.appendChild(el('div', { class: 'past-banner', text: `📅 ${relativePastLabel(ev.date, todayISO)} — kept here for reference only.` }));
+    card.appendChild(el('div', { class: 'past-banner' }, [icon('calendar'), ` ${relativePastLabel(ev.date, todayISO)} — kept here for reference only.`]));
   }
 
   if (ev.error) {
@@ -389,19 +392,22 @@ function renderEvent(ev, { isPast = false, todayISO = null } = {}) {
     return card;
   }
 
-  card.appendChild(el('p', { class: 'tagline', text: ev.tier.tagline }));
+  const attendanceText = ev.attendance
+    ? `~${ev.attendance.value.toLocaleString()} expected`
+    : 'Attendance unknown — assumed medium crowd for this estimate';
+  card.appendChild(el('p', { class: 'tagline', text: `${ev.tier.tagline} ${attendanceText}.` }));
 
   if (ev.needsReview) {
-    card.appendChild(el('div', {
-      class: 'review-banner',
-      text: "⚠️ Couldn't make head or tail of some of this day's details automatically — best check the official notice yourself.",
-    }));
+    card.appendChild(el('div', { class: 'review-banner' }, [
+      icon('warning'), " Couldn't make head or tail of some of this day's details automatically — best check the official notice yourself.",
+    ]));
   }
 
   const fixturesList = el('ul', { class: 'fixtures-list' });
   ev.fixtures.forEach((f, i) => {
     const li = el('li');
-    li.appendChild(document.createTextNode(`${f.timeText} `));
+    const displayTime = f.time ? formatClock12(f.time.hour * 60 + f.time.minute) : f.timeText;
+    li.appendChild(document.createTextNode(`${displayTime} `));
     if (f.home && f.away) {
       const homeSwatch = teamSwatch(f.home);
       if (homeSwatch) li.appendChild(homeSwatch);
@@ -423,15 +429,9 @@ function renderEvent(ev, { isPast = false, todayISO = null } = {}) {
     fixturesList.appendChild(li);
   });
   card.appendChild(fixturesList);
+  card.appendChild(el('p', { class: 'muted', text: `Estimated final whistle ~${ev.estimatedFinalWhistle}` }));
 
-  // The tagline above already says "full house" for that tier — repeat the
-  // actual number here instead of the same phrase twice in a row.
-  const attendanceText = ev.attendance
-    ? `~${ev.attendance.value.toLocaleString()} expected`
-    : 'Attendance unknown — assumed medium crowd for this estimate';
-  card.appendChild(el('p', { class: 'muted', text: `${attendanceText} · ${ev.tier.name} tier · estimated final whistle ~${ev.estimatedFinalWhistle}` }));
-
-  card.appendChild(el('p', { class: 'tip-callout', text: `${ev.tip.icon} ${ev.tip.text}` }));
+  card.appendChild(el('p', { class: 'tip-callout' }, [icon(ev.tip.icon), ` ${ev.tip.text}`]));
 
   const group = el('div', { class: 'timeline-group' });
 
@@ -439,11 +439,24 @@ function renderEvent(ev, { isPast = false, todayISO = null } = {}) {
   lanesWrapper.appendChild(buildLane('Roads', ev.timeline.roads, ev.windowStart, ev.windowEnd));
   lanesWrapper.appendChild(buildLane('Parking', ev.timeline.parking, ev.windowStart, ev.windowEnd));
   lanesWrapper.appendChild(buildLane('Foot traffic', ev.timeline.footTraffic, ev.windowStart, ev.windowEnd));
-  (ev.finalWhistleRanges || [ev.finalWhistleRange]).forEach((range, i) => {
-    const whistleBand = buildFinalWhistleBand(range, ev.windowStart, ev.windowEnd, i % 2 === 1);
+  // Only drop a flag onto the row below when it would actually collide with
+  // the previous one — a doubleheader with fixtures hours apart (the common
+  // case) doesn't need the extra vertical space a blanket every-other-one
+  // stagger would cost it.
+  const COLLISION_THRESHOLD_PCT = 16;
+  let lastRowCenterPct = -Infinity;
+  (ev.finalWhistleRanges || [ev.finalWhistleRange]).forEach((range) => {
+    const centerPct = (pct(range.fromMin, ev.windowStart, ev.windowEnd) + pct(range.toMin, ev.windowStart, ev.windowEnd)) / 2;
+    const stagger = Math.abs(centerPct - lastRowCenterPct) < COLLISION_THRESHOLD_PCT;
+    if (!stagger) lastRowCenterPct = centerPct;
+    const whistleBand = buildFinalWhistleBand(range, ev.windowStart, ev.windowEnd, stagger);
     if (whistleBand) lanesWrapper.appendChild(whistleBand);
   });
   buildKickoffMarkers(ev.fixtures, ev.windowStart, ev.windowEnd).forEach((m) => lanesWrapper.appendChild(m));
+  if (ev.date === todayISO) {
+    const nowMarker = buildNowMarker(ev.windowStart, ev.windowEnd);
+    if (nowMarker) lanesWrapper.appendChild(nowMarker);
+  }
   group.appendChild(lanesWrapper);
 
   group.appendChild(buildAxis(ev.windowStart, ev.windowEnd));
@@ -521,10 +534,32 @@ async function loadEvents() {
         dayToolsSection.hidden = true;
       }
     }
+
+    observeDayCards();
   } catch (err) {
     eventsEl.textContent = '';
     eventsEl.appendChild(el('p', { class: 'muted', text: `Could not load events (${err.message}).` }));
   }
+}
+
+// Bars fill in left to right, staggered, the first time a day card scrolls
+// into view — once played, a card is unobserved and left alone, never
+// touching anything else on it (KO/FT badges, the Now line, labels, legend,
+// and the "Show exact times" toggle always stay exactly as they are).
+let dayCardObserver = null;
+function observeDayCards() {
+  if (dayCardObserver) dayCardObserver.disconnect();
+  dayCardObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      entry.target.querySelectorAll('.timeline-segment').forEach((seg, i) => {
+        seg.style.animationDelay = `${i * 60}ms`;
+        seg.classList.add('play');
+      });
+      dayCardObserver.unobserve(entry.target);
+    });
+  }, { threshold: 0.4 });
+  document.querySelectorAll('.day-card').forEach((card) => dayCardObserver.observe(card));
 }
 
 document.getElementById('refresh-btn').addEventListener('click', loadEvents);
