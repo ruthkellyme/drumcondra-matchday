@@ -3,10 +3,18 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { fetchEvents } from './lib/scrape.js';
 import { applyHeuristics } from './lib/heuristics.js';
-import { geocodeRoads, CROKE_PARK } from './lib/geocode.js';
+import {
+  geocodeRoads, findRoadEnds, nearestApproach, nearestPointOnLines,
+  extendLineToPoint, bearingDeg, CROKE_PARK,
+} from './lib/geocode.js';
 import { fetchSeasonFixtures } from './lib/season.js';
 import { appendFeedback, readFeedback } from './lib/feedback.js';
-import { RESIDENT_REPORTED_ACCESS_ROADS } from './lib/config.js';
+import {
+  RESIDENT_REPORTED_ACCESS_ROADS, RESIDENT_REPORTED_CORDON_POINTS,
+  RESIDENT_REPORTED_CLOSURES, RESIDENT_REPORTED_ENTRANCE_ANCHORS,
+} from './lib/config.js';
+
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -20,19 +28,81 @@ const cleanRoadName = (n) => n.replace(/^stadium side of\s+/i, '').replace(/\.$/
 // showing them here just added visual noise for a fact that doesn't change
 // which roads a driver can or can't get through on.
 const ROLE_TEXT = {
-  critical: (name) => `${name} — closed to through-traffic on match day. Resident-pass access is maintained via the green route(s) shown on this map.`,
+  critical: (name) => `${name} — closed to through-traffic on match day. Resident-pass access is maintained via the entrance(s) shown on this map.`,
   good: (name) => `${name} — resident vehicle access maintained here during the closure.`,
   'good-resident': (name) => `${name} — resident-reported access route (not on Croke Park's official notice, but confirmed by a local).`,
+  barrier: (name) => `${name} — reported Garda barrier/cordon point (not on Croke Park's official notice, confirmed by a local).`,
 };
+
+// Junction/end points reported by a resident aren't in Croke Park's own
+// street lists, but still need geocoding — folded into the same lookup as
+// the closure/access roads so one Nominatim pass covers everything.
+const CORDON_ROAD_NAMES = RESIDENT_REPORTED_CORDON_POINTS.flatMap((p) => p.roads || (p.road ? [p.road] : []));
+const ENTRANCE_ANCHOR_ROAD_NAMES = Object.values(RESIDENT_REPORTED_ENTRANCE_ANCHORS);
+
+// For an 'end-fixed' cordon point: the fixed point is the known-good end;
+// "the other end" is whichever of the road's own extremities sits farthest
+// from it — that holds regardless of how many OSM way segments Nominatim
+// happened to return for the road this time.
+function computeFixedEnd(lookup, point) {
+  const road = lookup.get(point.road.toLowerCase());
+  if (!road?.lines?.length) return null;
+  const ends = findRoadEnds(road.lines);
+  if (!ends.length) return null;
+  const farEnd = ends.reduce((best, e) => (!best || dist(e, point.point) > dist(best, point.point) ? e : best), null);
+  return { road, anchorSpot: point.point, farEnd };
+}
+
+function buildCordonMarkers(lookup) {
+  const markers = [];
+  for (const point of RESIDENT_REPORTED_CORDON_POINTS) {
+    if (point.kind === 'junction') {
+      const [a, b] = point.roads.map((r) => lookup.get(r.toLowerCase()));
+      if (!a?.lines?.length || !b?.lines?.length) continue;
+      const spot = nearestApproach(a.lines, b.lines);
+      if (!spot) continue;
+      markers.push({
+        name: point.label, lat: spot[0], lon: spot[1], lines: [],
+        status: 'barrier', description: ROLE_TEXT.barrier(point.label),
+      });
+    } else if (point.kind === 'end-fixed') {
+      const found = computeFixedEnd(lookup, point);
+      if (!found) continue;
+      const { anchorSpot, farEnd } = found;
+      // Label by longitude so the pair reads "west end" / "east end" rather
+      // than an arbitrary order — Dublin's west of Greenwich, so the more
+      // negative longitude is further west.
+      const withLabels = anchorSpot[1] < farEnd[1]
+        ? [[anchorSpot, 'west end'], [farEnd, 'east end']]
+        : [[farEnd, 'west end'], [anchorSpot, 'east end']];
+      for (const [pt, suffix] of withLabels) {
+        const name = `${point.label} (${suffix})`;
+        markers.push({ name, lat: pt[0], lon: pt[1], lines: [], status: 'barrier', description: ROLE_TEXT.barrier(name) });
+      }
+    }
+  }
+  return markers;
+}
 
 async function attachMap(event) {
   if (!event.official) return event;
   const { closureRoads = [], accessRoads = [] } = event.official;
-  const allNames = [...closureRoads, ...accessRoads, ...RESIDENT_REPORTED_ACCESS_ROADS];
+  // A resident reports this one isn't a real access route — its actual
+  // status is unclear, so leave it off the map entirely rather than draw it
+  // as either an entrance or a closure.
+  const accessRoadsFiltered = accessRoads.filter(
+    (n) => !RESIDENT_REPORTED_CLOSURES.some((c) => c.toLowerCase() === cleanRoadName(n).toLowerCase())
+  );
+  const allNames = [
+    ...closureRoads, ...accessRoads, ...RESIDENT_REPORTED_ACCESS_ROADS,
+    ...CORDON_ROAD_NAMES, ...ENTRANCE_ANCHOR_ROAD_NAMES,
+  ];
   if (allNames.length === 0) return event;
 
   const geocoded = await geocodeRoads(allNames);
   const lookup = new Map(geocoded.map((g) => [g.name.toLowerCase(), g]));
+  const closureLines = closureRoads.flatMap((n) => lookup.get(cleanRoadName(n).toLowerCase())?.lines || []);
+  const entranceAnchors = new Map(Object.entries(RESIDENT_REPORTED_ENTRANCE_ANCHORS).map(([k, v]) => [k.toLowerCase(), v]));
 
   // Keep the original wording (e.g. "Stadium side of St James' Avenue") for
   // display, even though the cleaned version is what gets geocoded — the
@@ -43,27 +113,58 @@ async function attachMap(event) {
       const g = lookup.get(cleanRoadName(n).toLowerCase());
       if (!g) return null;
       const displayName = n.replace(/\.$/, '').trim();
-      return {
+      const marker = {
         name: displayName,
         lat: g.lat,
         lon: g.lon,
-        line: g.line,
+        lines: g.lines,
         status,
         description: ROLE_TEXT[textKey](displayName),
       };
+      if ((status === 'good' || status === 'good-resident') && g.lines.length) {
+        // A named override takes priority — where a resident says the
+        // entrance actually is beats a distance-based guess. Otherwise,
+        // "entrance" is where this road meets the closed roads it connects
+        // through — not whichever end happens to sit nearest the stadium's
+        // centre point, which can be the wrong end entirely.
+        const anchorRoadName = entranceAnchors.get(cleanRoadName(n).toLowerCase());
+        const anchorRoad = anchorRoadName && lookup.get(anchorRoadName.toLowerCase());
+        const otherLines = anchorRoad?.lines?.length ? anchorRoad.lines : closureLines;
+        const found = otherLines.length ? nearestPointOnLines(g.lines, otherLines) : null;
+        if (found) {
+          marker.entrancePoint = found.point;
+          marker.entranceAngle = bearingDeg(found.point, found.next) - 90;
+        }
+      }
+      return marker;
     })
     .filter(Boolean);
 
   const allMarkers = [
     ...buildMarkers(closureRoads, 'critical'),
-    ...buildMarkers(accessRoads, 'good'),
+    ...buildMarkers(accessRoadsFiltered, 'good'),
     ...buildMarkers(RESIDENT_REPORTED_ACCESS_ROADS, 'good', 'good-resident'),
+    ...buildCordonMarkers(lookup),
   ];
+
+  // The barrier icon at a road's true end is only half the picture — the
+  // drawn closure line itself needs to reach that same point, or there's a
+  // visible gap between where the red line stops and the "Cordoned area"
+  // marker sits.
+  for (const point of RESIDENT_REPORTED_CORDON_POINTS) {
+    if (point.kind !== 'end-fixed') continue;
+    const found = computeFixedEnd(lookup, point);
+    if (!found) continue;
+    const closureMarker = allMarkers.find(
+      (m) => m.status === 'critical' && m.name.toLowerCase() === cleanRoadName(point.road).toLowerCase()
+    );
+    if (closureMarker) closureMarker.lines = extendLineToPoint(closureMarker.lines, found.anchorSpot);
+  }
 
   // The same road can legitimately appear in more than one official list —
   // keep one marker per location, the most severe status, rather than
   // stacking dots.
-  const severity = { critical: 2, good: 0 };
+  const severity = { critical: 2, good: 0, barrier: 1 };
   const byName = new Map();
   for (const m of allMarkers) {
     const existing = byName.get(m.name.toLowerCase());
