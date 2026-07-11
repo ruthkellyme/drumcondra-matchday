@@ -50,7 +50,7 @@ function renderFixtureRow(f) {
   if (f.hasDetailedEstimate) {
     row.appendChild(el('a', { class: 'season-link', href: 'index.html' }, ['See detailed estimate →']));
   } else {
-    row.appendChild(el('span', { class: 'season-tbc muted', text: 'Time/attendance TBC' }));
+    row.appendChild(el('span', { class: 'season-tbc muted', text: 'TBC as soon as released' }));
   }
   return row;
 }
