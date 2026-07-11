@@ -13,20 +13,21 @@ function el(tag, props = {}, children = []) {
 
 const MAP_STATUS_HEX = { good: '#2F6B4F', critical: '#A13A2F', barrier: '#5B6B66' };
 
+// Bold rounded arrow (matches the app-wide icon set) rather than a CSS
+// border-trick triangle — round linecap/linejoin gives it the same chunky,
+// friendly weight as the other icons instead of a sharp geometric wedge.
+const ARROW_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h13"/><path d="M13 6l6 6-6 6"/></svg>';
+
 function entranceIcon(angleDeg) {
-  // A CSS-drawn triangle rather than an arrow character/emoji — dingbat
-  // arrows like "➜" render inconsistently across fonts/platforms (missing
-  // glyph fallbacks can look like an unrelated shape), a plain border-trick
-  // triangle always renders the same everywhere.
   return L.divIcon({
     className: 'entrance-icon',
-    html: `<div class="entrance-icon-dot" style="transform: rotate(${angleDeg}deg)"><span class="entrance-icon-arrow"></span></div>`,
+    html: `<div class="entrance-icon-dot" style="transform: rotate(${angleDeg}deg)">${ARROW_SVG}</div>`,
     iconSize: [26, 26],
     iconAnchor: [13, 13],
   });
 }
 
-const WARNING_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4"/><path d="M12 16.5h.01"/></svg>';
+const WARNING_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4"/><path d="M12 16.5h.01"/></svg>';
 
 function barrierIcon() {
   return L.divIcon({ className: 'barrier-icon', html: WARNING_SVG, iconSize: [22, 22], iconAnchor: [11, 11] });
@@ -35,6 +36,12 @@ function barrierIcon() {
 function warningIcon(className) {
   const span = el('span', { class: className });
   span.innerHTML = WARNING_SVG;
+  return span;
+}
+
+function arrowIcon(className) {
+  const span = el('span', { class: className });
+  span.innerHTML = ARROW_SVG;
   return span;
 }
 
@@ -114,10 +121,10 @@ function buildLegendChip(ev) {
   return el('div', { class: 'map-legend-chip' }, [
     el('div', { class: 'map-legend-chip-swatches' }, [
       el('span', { class: 'legend-item' }, [el('span', { class: 'swatch critical' }), 'Closed to through-traffic']),
-      el('span', { class: 'legend-item' }, [el('span', { class: 'legend-icon-entrance' }, [el('span', { class: 'entrance-icon-arrow' })]), 'Residents only']),
+      el('span', { class: 'legend-item' }, [arrowIcon('legend-icon-entrance'), 'Residents only']),
       el('span', { class: 'legend-item' }, [warningIcon('legend-icon'), 'Cordoned area']),
     ]),
-    el('p', { class: 'map-caption', text: `Based on the notice for ${ev.dayLabel}. Tap a line or pin for details.` }),
+    el('p', { class: 'map-caption', text: 'Same core set of streets every event. Tap a line or pin for details.' }),
   ]);
 }
 
@@ -136,7 +143,6 @@ async function loadRoadsMap() {
       return;
     }
 
-    document.getElementById('source-note').textContent = data.fetchedAt ? `Last checked ${new Date(data.fetchedAt).toLocaleString()}.` : '';
     section.textContent = '';
     initLeafletMap('road-map-section', withMap.map);
     mapPage.appendChild(buildLegendChip(withMap));

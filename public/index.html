@@ -27,15 +27,16 @@
 
   <main>
     <section id="events" aria-live="polite">
-      <p class="muted">Loading upcoming events…</p>
+      <p class="muted loading-row"><span class="loading-lights"><span></span><span></span><span></span></span>Loading upcoming events…</p>
     </section>
 
     <section class="legend" aria-label="Status legend">
-      <span class="legend-item"><span class="swatch good"></span>Open / available / normal</span>
-      <span class="legend-item"><span class="swatch warning"></span>Restricted / partial / busy</span>
-      <span class="legend-item"><span class="swatch critical"></span>Closed / maxed out / very busy</span>
-      <span class="legend-item"><span class="swatch critical striped"></span>Closed, but resident pass still gets through</span>
+      <span class="legend-item"><span class="swatch good"></span>Open</span>
+      <span class="legend-item"><span class="swatch warning"></span>Restricted</span>
+      <span class="legend-item"><span class="swatch critical"></span>Closed</span>
+      <span class="legend-item"><span class="swatch critical striped"></span>Closed, residents only</span>
       <span class="legend-note">"Croke Park" = their own published time. "Est." = our best guess.</span>
+      <label class="parking-toggle"><input type="checkbox" id="show-parking-toggle" /> Also show parking status</label>
     </section>
 
     <section id="day-tools" class="event-card" hidden>
@@ -43,14 +44,19 @@
       <label class="day-picker-label">Which day? <select id="day-picker"></select></label>
       <div id="day-tools-content"></div>
     </section>
+
+    <p class="muted match-watch-note">
+      A detailed estimate can only be generated once Croke Park has published their own notice for an event — until
+      then, it won't show up here yet.
+    </p>
   </main>
 
   <footer class="site-footer">
     <p class="shoutout">
-      This website was made by Ruth, a local resident. If you like this website, give me a follow on Instagram:
-      <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
+      <span class="shoutout-lead">This website was made by Ruth, a local resident. If you like this website, give me a follow on Instagram:</span>
+      <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
+      · <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
       · <a href="https://pucaceramics.com/" target="_blank" rel="noopener">Púca Ceramics</a>
-      · <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
     </p>
     <div class="meta-row meta-row--footer">
       <button id="refresh-btn" type="button">Refresh</button>
