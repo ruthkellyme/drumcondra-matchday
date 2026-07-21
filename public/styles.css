@@ -160,6 +160,21 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
 }
 .event-card.needs-review { border-color: var(--status-warning); }
 
+.whatsapp-card { text-align: center; }
+.whatsapp-card p { max-width: 480px; margin: 0 auto 18px; }
+.cta-button {
+  display: inline-block;
+  background: var(--brand-dark);
+  color: #fff;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 12px 22px;
+}
+.cta-button:hover { background: var(--brand); }
+
 .season-row {
   display: flex;
   align-items: center;
@@ -373,7 +388,7 @@ h2 .icon-tier { vertical-align: -2px; }
   top: 0;
   height: 100%;
   left: var(--from);
-  width: calc(var(--to) - var(--from) - 2px);
+  width: calc(var(--to) - var(--from) - var(--gap, 2px));
   cursor: pointer;
 }
 .seg:first-child { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
@@ -679,7 +694,8 @@ details summary { cursor: pointer; color: var(--brand); font-size: 15px; margin-
   color: #f5f5f2;
   text-align: center;
 }
-.shoutout-lead { font-weight: 400; }
+.shoutout-name { display: block; font-weight: 600; }
+.shoutout-links { display: block; margin-top: 8px; font-size: 13px; font-weight: 400; }
 .shoutout a { color: #8fd2f2; }
 .meta-row--footer { justify-content: center; margin-top: 16px; }
 /* A ghost button on navy, not the plain white pill used elsewhere — that
@@ -769,7 +785,7 @@ html, body { overflow-x: hidden; }
     left: 0;
     top: var(--from);
     width: 100%;
-    height: calc(var(--to) - var(--from) - 2px);
+    height: calc(var(--to) - var(--from) - var(--gap, 2px));
   }
   .seg:first-child { border-radius: 4px 4px 0 0; }
   .seg:last-child { border-radius: 0 0 4px 4px; }

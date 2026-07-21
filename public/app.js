@@ -3,6 +3,12 @@ const warningsEl = document.getElementById('warnings');
 const fetchedAtEl = document.getElementById('fetched-at');
 const tooltipEl = document.getElementById('tooltip');
 
+// Once real event data has been shown, a later refresh that fails or comes
+// back empty (a transient network hiccup, Croke Park's page being briefly
+// unreachable) must never blank the screen — residents keep seeing the last
+// good data until a fresh, non-empty response actually arrives.
+let hasLoadedRealData = false;
+
 function formatClock12(min) {
   const m = Math.max(0, Math.min(1439, Math.round(min)));
   let h = Math.floor(m / 60);
@@ -204,6 +210,13 @@ function buildLane(name, segments, windowStart, windowEnd, key) {
       tabindex: '0',
     });
     setRange(seg_el, pct(seg.fromMin, windowStart, windowEnd), pct(seg.toMin, windowStart, windowEnd));
+    // No visible seam between two segments that look identical (same status,
+    // same striped/solid texture) — a gap there reads as "something changes
+    // here" when nothing actually does visually, just the label underneath.
+    const next = segments[i + 1];
+    if (next && next.status === seg.status && !!next.texture === !!seg.texture) {
+      seg_el.style.setProperty('--gap', '0px');
+    }
     const timeRange = formatTimeRange(seg, i === 0, i === segments.length - 1);
     const tooltipText = `${seg.label}${seg.note ? ' — ' + seg.note : ''} · ${timeRange}${seg.official ? ' · Official info' : ' · Estimate'}`;
     seg_el.addEventListener('mouseenter', () => showTooltip(seg_el, tooltipText));
@@ -392,6 +405,31 @@ function renderEvent(ev, { isPast = false, todayISO = null } = {}) {
 
   if (ev.error) {
     card.appendChild(el('p', { class: 'muted', text: ev.error }));
+    // No kick-off time means no timeline chart can be built, but Croke
+    // Park's own restriction notice doesn't depend on kick-off time — show
+    // that much plainly rather than leaving the card empty.
+    if (ev.attendance) {
+      const att = ev.attendance.isFullHouse ? 'Full house expected.' : `~${ev.attendance.value.toLocaleString()} expected.`;
+      card.appendChild(el('p', { class: 'muted', text: att }));
+    }
+    if (ev.official) {
+      const { roadClosureTime, closureRoads, accessRoads, parkingRestrictionTime, restrictedStreets, exitRouteNote } = ev.official;
+      const list = el('ul', { class: 'official-fallback-list' });
+      if (roadClosureTime && closureRoads?.length) {
+        list.appendChild(el('li', {
+          text: `${closureRoads.join(' & ')} closed from ${roadClosureTime}`
+            + (accessRoads?.length ? ` — resident access via ${accessRoads.join(' & ')}.` : '.'),
+        }));
+      }
+      if (parkingRestrictionTime && restrictedStreets?.length) {
+        list.appendChild(el('li', { text: `Parking restricted from ${parkingRestrictionTime} on: ${restrictedStreets.join(', ')}.` }));
+      }
+      if (exitRouteNote) list.appendChild(el('li', { text: exitRouteNote }));
+      if (list.children.length) {
+        card.appendChild(el('p', { class: 'muted', text: "Croke Park's official notice for this day:" }));
+        card.appendChild(list);
+      }
+    }
     return card;
   }
 
@@ -471,12 +509,39 @@ function renderEvent(ev, { isPast = false, todayISO = null } = {}) {
 }
 
 async function loadEvents() {
-  eventsEl.textContent = '';
-  eventsEl.appendChild(el('p', { class: 'muted', text: 'Loading upcoming events…' }));
+  if (!hasLoadedRealData) {
+    eventsEl.textContent = '';
+    eventsEl.appendChild(el('p', { class: 'muted', text: 'Loading upcoming events…' }));
+  }
   try {
     const res = await fetch('/api/events');
     const data = await res.json();
+
+    if (!data.events || data.events.length === 0) {
+      // Nothing new to show yet — if we already have real data on screen,
+      // leave it exactly as it is rather than replacing it with an empty
+      // state. Still surface the warnings/last-checked time so it's clear a
+      // check did happen.
+      if (data.warnings && data.warnings.length) {
+        warningsEl.textContent = '';
+        warningsEl.hidden = false;
+        warningsEl.appendChild(el('strong', { text: 'Heads up:' }));
+        const ul = el('ul');
+        data.warnings.forEach((w) => ul.appendChild(el('li', { text: w })));
+        warningsEl.appendChild(ul);
+      } else if (!hasLoadedRealData) {
+        warningsEl.hidden = true;
+      }
+      fetchedAtEl.textContent = data.fetchedAt ? `Last checked ${new Date(data.fetchedAt).toLocaleString()}` : fetchedAtEl.textContent;
+      if (!hasLoadedRealData) {
+        eventsEl.textContent = '';
+        eventsEl.appendChild(el('p', { class: 'muted', text: 'No upcoming events found on the Croke Park page right now.' }));
+      }
+      return;
+    }
+
     eventsEl.textContent = '';
+    hasLoadedRealData = true;
 
     if (data.warnings && data.warnings.length) {
       warningsEl.textContent = '';
@@ -491,11 +556,6 @@ async function loadEvents() {
 
     fetchedAtEl.textContent = data.fetchedAt ? `Last checked ${new Date(data.fetchedAt).toLocaleString()}` : '';
 
-    if (!data.events || data.events.length === 0) {
-      eventsEl.appendChild(el('p', { class: 'muted', text: 'No upcoming events found on the Croke Park page right now.' }));
-      return;
-    }
-
     // Persistent rule: today/upcoming leads the page, no matter what order
     // the source lists things in — a match that already happened yesterday
     // is stale information and shouldn't be the first thing anyone sees.
@@ -506,16 +566,21 @@ async function loadEvents() {
     upcoming.forEach((ev) => eventsEl.appendChild(renderEvent(ev, { todayISO })));
 
     if (past.length) {
-      eventsEl.appendChild(el('h3', { class: 'past-events-header', text: 'Past — for reference' }));
       if (!upcoming.length) {
         eventsEl.appendChild(el('p', {
           class: 'muted past-events-note',
           text: "No upcoming event is published yet — this'll update as soon as Croke Park releases the details for the next one.",
         }));
       }
+      // Collapsed by default — past matches are reference material, not the
+      // thing anyone opens this page to see, so they shouldn't push the
+      // actually-relevant upcoming event further down the page.
+      const pastDetails = el('details', { class: 'past-events-toggle' });
+      pastDetails.appendChild(el('summary', { class: 'past-events-header', text: 'Past — for reference' }));
       past
         .sort((a, b) => b.date.localeCompare(a.date))
-        .forEach((ev) => eventsEl.appendChild(renderEvent(ev, { isPast: true, todayISO })));
+        .forEach((ev) => pastDetails.appendChild(renderEvent(ev, { isPast: true, todayISO })));
+      eventsEl.appendChild(pastDetails);
     }
 
     const dayToolsSection = document.getElementById('day-tools');
@@ -540,8 +605,19 @@ async function loadEvents() {
 
     observeDayCards();
   } catch (err) {
-    eventsEl.textContent = '';
-    eventsEl.appendChild(el('p', { class: 'muted', text: `Could not load events (${err.message}).` }));
+    // A failed refresh must not wipe out data that's already on screen —
+    // surface the failure in the warnings banner instead, and only fall
+    // back to replacing the events list if there was nothing there yet.
+    warningsEl.textContent = '';
+    warningsEl.hidden = false;
+    warningsEl.appendChild(el('strong', { text: 'Heads up:' }));
+    const ul = el('ul');
+    ul.appendChild(el('li', { text: `Could not check for updates (${err.message}) — showing the last data loaded.` }));
+    warningsEl.appendChild(ul);
+    if (!hasLoadedRealData) {
+      eventsEl.textContent = '';
+      eventsEl.appendChild(el('p', { class: 'muted', text: `Could not load events (${err.message}).` }));
+    }
   }
 }
 
