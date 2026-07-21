@@ -3,6 +3,12 @@ const warningsEl = document.getElementById('warnings');
 const fetchedAtEl = document.getElementById('fetched-at');
 const tooltipEl = document.getElementById('tooltip');
 
+// Once real event data has been shown, a later refresh that fails or comes
+// back empty (a transient network hiccup, Croke Park's page being briefly
+// unreachable) must never blank the screen — residents keep seeing the last
+// good data until a fresh, non-empty response actually arrives.
+let hasLoadedRealData = false;
+
 function formatClock12(min) {
   const m = Math.max(0, Math.min(1439, Math.round(min)));
   let h = Math.floor(m / 60);
@@ -85,21 +91,24 @@ function el(tag, props = {}, children = []) {
   return node;
 }
 
-// Minimal single-line (stroke-only) icons in place of emoji — one shared
+// Minimal line icons in place of emoji — bold, evenly-weighted stroke with
+// fully rounded caps/joins and rounded corners throughout, matched to a
+// reference icon set the user supplied (alarm-clock, shield-check,
+// calendar-check, basket — same friendly, chunky-line style). One shared
 // path set per concept, sized/coloured via CSS on the wrapping <span class="icon">.
 const ICON_PATHS = {
-  clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>',
-  check: '<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>',
+  clock: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 1.5"/><path d="M9 3.5 6.5 5.5"/><path d="M15 3.5l2.5 2"/>',
+  check: '<path d="M12 3l6.5 2.8v4.7c0 4.6-3.2 7.4-6.5 8.3-3.3-.9-6.5-3.7-6.5-8.3V5.8L12 3z"/><path d="M9 12.3l2.1 2.1L15.5 10"/>',
   warning: '<path d="M12 4 3 20h18L12 4z"/><path d="M12 10v4"/><path d="M12 16.5h.01"/>',
-  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 3v4"/><path d="M16 3v4"/>',
-  car: '<path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11"/><rect x="3" y="11" width="18" height="6" rx="2"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/>',
-  dog: '<circle cx="8" cy="8" r="1.4"/><circle cx="12" cy="6" r="1.4"/><circle cx="16" cy="8" r="1.4"/><path d="M9 14a3 3 0 0 1 6 0c0 2-1.5 3-3 3s-3-1-3-3z"/>',
-  cart: '<path d="M6 7h15l-1.5 9a2 2 0 0 1-2 1.7H9.3a2 2 0 0 1-2-1.7L6 7z"/><path d="M6 7 5 3H3"/><circle cx="10" cy="20" r="1"/><circle cx="17" cy="20" r="1"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4"/><path d="M16 3v4"/><path d="M3 10h18"/><path d="M9 15l2 2 4-4"/>',
+  car: '<path d="M5 11l1.3-4a2 2 0 0 1 1.9-1.4h7.6a2 2 0 0 1 1.9 1.4l1.3 4"/><rect x="2.5" y="11" width="19" height="6.5" rx="2.5"/><circle cx="7.5" cy="17.5" r="1.6"/><circle cx="16.5" cy="17.5" r="1.6"/>',
+  dog: '<circle cx="7.5" cy="8" r="1.5"/><circle cx="12" cy="6" r="1.5"/><circle cx="16.5" cy="8" r="1.5"/><path d="M8.5 14.5a3.5 3.5 0 0 1 7 0c0 2.2-1.7 3.5-3.5 3.5s-3.5-1.3-3.5-3.5z"/>',
+  cart: '<path d="M5 9h14l-1.5 8.5a2 2 0 0 1-2 1.5H8.5a2 2 0 0 1-2-1.5L5 9z"/><path d="M8 9a4 4 0 0 1 8 0"/>',
 };
 
 function icon(name, extraClass = '') {
   const span = el('span', { class: `icon icon-${name}${extraClass ? ' ' + extraClass : ''}` });
-  span.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[name] || ''}</svg>`;
+  span.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICON_PATHS[name] || ''}</svg>`;
   return span;
 }
 
@@ -110,10 +119,10 @@ function tierIcon(level) {
     const x = 3 + i * 5.5;
     const y = 20 - h;
     const filled = i < level;
-    return `<rect x="${x}" y="${y}" width="3.5" height="${h}" rx="1" ${filled ? 'fill="currentColor" stroke="none"' : 'fill="none"'} />`;
+    return `<rect x="${x}" y="${y}" width="3.5" height="${h}" rx="1.5" ${filled ? 'fill="currentColor" stroke="none"' : 'fill="none"'} />`;
   }).join('');
   const span = el('span', { class: 'icon icon-tier' });
-  span.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="1.5">${bars}</svg>`;
+  span.innerHTML = `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">${bars}</svg>`;
   return span;
 }
 
@@ -193,7 +202,7 @@ function buildNowMarker(windowStart, windowEnd) {
   return marker;
 }
 
-function buildLane(name, segments, windowStart, windowEnd) {
+function buildLane(name, segments, windowStart, windowEnd, key) {
   const track = el('div', { class: 'lane-track' });
   segments.forEach((seg, i) => {
     const seg_el = el('div', {
@@ -201,6 +210,13 @@ function buildLane(name, segments, windowStart, windowEnd) {
       tabindex: '0',
     });
     setRange(seg_el, pct(seg.fromMin, windowStart, windowEnd), pct(seg.toMin, windowStart, windowEnd));
+    // No visible seam between two segments that look identical (same status,
+    // same striped/solid texture) — a gap there reads as "something changes
+    // here" when nothing actually does visually, just the label underneath.
+    const next = segments[i + 1];
+    if (next && next.status === seg.status && !!next.texture === !!seg.texture) {
+      seg_el.style.setProperty('--gap', '0px');
+    }
     const timeRange = formatTimeRange(seg, i === 0, i === segments.length - 1);
     const tooltipText = `${seg.label}${seg.note ? ' — ' + seg.note : ''} · ${timeRange}${seg.official ? ' · Official info' : ' · Estimate'}`;
     seg_el.addEventListener('mouseenter', () => showTooltip(seg_el, tooltipText));
@@ -209,10 +225,12 @@ function buildLane(name, segments, windowStart, windowEnd) {
     seg_el.addEventListener('blur', hideTooltip);
     track.appendChild(seg_el);
   });
-  return el('div', { class: 'lane' }, [
+  const laneEl = el('div', { class: 'lane' }, [
     track,
     el('span', { class: 'lane-name', text: name }),
   ]);
+  if (key) laneEl.dataset.lane = key;
+  return laneEl;
 }
 
 const STATUS_RANK = { good: 0, warning: 1, critical: 2 };
@@ -356,8 +374,6 @@ function buildExactTimes(ev) {
   const details = el('details', { class: 'details-table' });
   details.appendChild(el('summary', { text: 'Show exact times as a list' }));
   details.appendChild(buildDetailsTable('Roads', ev.timeline.roads));
-  details.appendChild(buildDetailsTable('Parking', ev.timeline.parking));
-  details.appendChild(buildDetailsTable('Foot traffic', ev.timeline.footTraffic));
   return details;
 }
 
@@ -389,6 +405,31 @@ function renderEvent(ev, { isPast = false, todayISO = null } = {}) {
 
   if (ev.error) {
     card.appendChild(el('p', { class: 'muted', text: ev.error }));
+    // No kick-off time means no timeline chart can be built, but Croke
+    // Park's own restriction notice doesn't depend on kick-off time — show
+    // that much plainly rather than leaving the card empty.
+    if (ev.attendance) {
+      const att = ev.attendance.isFullHouse ? 'Full house expected.' : `~${ev.attendance.value.toLocaleString()} expected.`;
+      card.appendChild(el('p', { class: 'muted', text: att }));
+    }
+    if (ev.official) {
+      const { roadClosureTime, closureRoads, accessRoads, parkingRestrictionTime, restrictedStreets, exitRouteNote } = ev.official;
+      const list = el('ul', { class: 'official-fallback-list' });
+      if (roadClosureTime && closureRoads?.length) {
+        list.appendChild(el('li', {
+          text: `${closureRoads.join(' & ')} closed from ${roadClosureTime}`
+            + (accessRoads?.length ? ` — resident access via ${accessRoads.join(' & ')}.` : '.'),
+        }));
+      }
+      if (parkingRestrictionTime && restrictedStreets?.length) {
+        list.appendChild(el('li', { text: `Parking restricted from ${parkingRestrictionTime} on: ${restrictedStreets.join(', ')}.` }));
+      }
+      if (exitRouteNote) list.appendChild(el('li', { text: exitRouteNote }));
+      if (list.children.length) {
+        card.appendChild(el('p', { class: 'muted', text: "Croke Park's official notice for this day:" }));
+        card.appendChild(list);
+      }
+    }
     return card;
   }
 
@@ -436,9 +477,9 @@ function renderEvent(ev, { isPast = false, todayISO = null } = {}) {
   const group = el('div', { class: 'timeline-group' });
 
   const lanesWrapper = el('div', { class: 'lanes-wrapper' });
-  lanesWrapper.appendChild(buildLane('Roads', ev.timeline.roads, ev.windowStart, ev.windowEnd));
-  lanesWrapper.appendChild(buildLane('Parking', ev.timeline.parking, ev.windowStart, ev.windowEnd));
-  lanesWrapper.appendChild(buildLane('Foot traffic', ev.timeline.footTraffic, ev.windowStart, ev.windowEnd));
+  lanesWrapper.appendChild(buildLane('Roads', ev.timeline.roads, ev.windowStart, ev.windowEnd, 'roads'));
+  lanesWrapper.appendChild(buildLane('Parking', ev.timeline.parking, ev.windowStart, ev.windowEnd, 'parking'));
+  lanesWrapper.appendChild(buildLane('Foot traffic', ev.timeline.footTraffic, ev.windowStart, ev.windowEnd, 'footTraffic'));
   // Only drop a flag onto the row below when it would actually collide with
   // the previous one — a doubleheader with fixtures hours apart (the common
   // case) doesn't need the extra vertical space a blanket every-other-one
@@ -468,12 +509,39 @@ function renderEvent(ev, { isPast = false, todayISO = null } = {}) {
 }
 
 async function loadEvents() {
-  eventsEl.textContent = '';
-  eventsEl.appendChild(el('p', { class: 'muted', text: 'Loading upcoming events…' }));
+  if (!hasLoadedRealData) {
+    eventsEl.textContent = '';
+    eventsEl.appendChild(el('p', { class: 'muted', text: 'Loading upcoming events…' }));
+  }
   try {
     const res = await fetch('/api/events');
     const data = await res.json();
+
+    if (!data.events || data.events.length === 0) {
+      // Nothing new to show yet — if we already have real data on screen,
+      // leave it exactly as it is rather than replacing it with an empty
+      // state. Still surface the warnings/last-checked time so it's clear a
+      // check did happen.
+      if (data.warnings && data.warnings.length) {
+        warningsEl.textContent = '';
+        warningsEl.hidden = false;
+        warningsEl.appendChild(el('strong', { text: 'Heads up:' }));
+        const ul = el('ul');
+        data.warnings.forEach((w) => ul.appendChild(el('li', { text: w })));
+        warningsEl.appendChild(ul);
+      } else if (!hasLoadedRealData) {
+        warningsEl.hidden = true;
+      }
+      fetchedAtEl.textContent = data.fetchedAt ? `Last checked ${new Date(data.fetchedAt).toLocaleString()}` : fetchedAtEl.textContent;
+      if (!hasLoadedRealData) {
+        eventsEl.textContent = '';
+        eventsEl.appendChild(el('p', { class: 'muted', text: 'No upcoming events found on the Croke Park page right now.' }));
+      }
+      return;
+    }
+
     eventsEl.textContent = '';
+    hasLoadedRealData = true;
 
     if (data.warnings && data.warnings.length) {
       warningsEl.textContent = '';
@@ -488,11 +556,6 @@ async function loadEvents() {
 
     fetchedAtEl.textContent = data.fetchedAt ? `Last checked ${new Date(data.fetchedAt).toLocaleString()}` : '';
 
-    if (!data.events || data.events.length === 0) {
-      eventsEl.appendChild(el('p', { class: 'muted', text: 'No upcoming events found on the Croke Park page right now.' }));
-      return;
-    }
-
     // Persistent rule: today/upcoming leads the page, no matter what order
     // the source lists things in — a match that already happened yesterday
     // is stale information and shouldn't be the first thing anyone sees.
@@ -503,16 +566,24 @@ async function loadEvents() {
     upcoming.forEach((ev) => eventsEl.appendChild(renderEvent(ev, { todayISO })));
 
     if (past.length) {
-      eventsEl.appendChild(el('h3', { class: 'past-events-header', text: 'Past — for reference' }));
       if (!upcoming.length) {
         eventsEl.appendChild(el('p', {
           class: 'muted past-events-note',
           text: "No upcoming event is published yet — this'll update as soon as Croke Park releases the details for the next one.",
         }));
       }
+      // Collapsed by default once there's an upcoming event to lead with —
+      // past matches are reference material at that point, and shouldn't
+      // push the actually-relevant one further down the page. But with
+      // nothing upcoming published yet, the past match *is* the only real
+      // content here, so start it open rather than hiding everything behind
+      // a click.
+      const pastDetails = el('details', { class: 'past-events-toggle', ...(!upcoming.length ? { open: '' } : {}) });
+      pastDetails.appendChild(el('summary', { class: 'past-events-header', text: 'Past — for reference' }));
       past
         .sort((a, b) => b.date.localeCompare(a.date))
-        .forEach((ev) => eventsEl.appendChild(renderEvent(ev, { isPast: true, todayISO })));
+        .forEach((ev) => pastDetails.appendChild(renderEvent(ev, { isPast: true, todayISO })));
+      eventsEl.appendChild(pastDetails);
     }
 
     const dayToolsSection = document.getElementById('day-tools');
@@ -537,8 +608,19 @@ async function loadEvents() {
 
     observeDayCards();
   } catch (err) {
-    eventsEl.textContent = '';
-    eventsEl.appendChild(el('p', { class: 'muted', text: `Could not load events (${err.message}).` }));
+    // A failed refresh must not wipe out data that's already on screen —
+    // surface the failure in the warnings banner instead, and only fall
+    // back to replacing the events list if there was nothing there yet.
+    warningsEl.textContent = '';
+    warningsEl.hidden = false;
+    warningsEl.appendChild(el('strong', { text: 'Heads up:' }));
+    const ul = el('ul');
+    ul.appendChild(el('li', { text: `Could not check for updates (${err.message}) — showing the last data loaded.` }));
+    warningsEl.appendChild(ul);
+    if (!hasLoadedRealData) {
+      eventsEl.textContent = '';
+      eventsEl.appendChild(el('p', { class: 'muted', text: `Could not load events (${err.message}).` }));
+    }
   }
 }
 
@@ -563,5 +645,15 @@ function observeDayCards() {
 }
 
 document.getElementById('refresh-btn').addEventListener('click', loadEvents);
+
+// Parking is hidden by default (Roads + Foot traffic covers what most
+// residents need at a glance) — this just toggles a body class, so it
+// applies to every card at once and survives a Refresh re-render.
+const showParkingToggle = document.getElementById('show-parking-toggle');
+if (showParkingToggle) {
+  showParkingToggle.addEventListener('change', () => {
+    document.body.classList.toggle('show-parking', showParkingToggle.checked);
+  });
+}
 
 loadEvents();

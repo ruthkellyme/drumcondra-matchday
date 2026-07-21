@@ -8,12 +8,15 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="map-page-body">
   <div class="map-page">
     <div id="road-map-section" class="map-hero">
-      <p class="muted map-loading">Loading map…</p>
+      <p class="muted map-loading loading-row"><span class="loading-lights"><span></span><span></span><span></span></span>Loading map…</p>
     </div>
 
     <header class="map-overlay-bar">
@@ -28,20 +31,15 @@
     <div id="warnings" class="warnings map-overlay-warnings" hidden></div>
   </div>
 
-  <main class="map-page-info">
-    <p class="subtitle-block">
-      Which roads around Croke Park close to through-traffic on a big match day, and which routes keep resident-pass
-      access — this is the same core set of streets every event, so it lives on one page instead of repeating under
-      every match. <span id="source-note" class="muted"></span>
-    </p>
-  </main>
-
   <footer class="site-footer">
     <p class="shoutout">
-      This website was made by Ruth, a local resident. If you like this website, give me a follow on Instagram:
-      <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
-      · <a href="https://pucaceramics.com/" target="_blank" rel="noopener">Púca Ceramics</a>
-      · <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
+      <span class="shoutout-name">Made by Ruth, a local resident.</span>
+      <span class="shoutout-links">
+        If you like this website, give me a follow on Instagram:
+        <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
+        · <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
+        · <a href="https://pucaceramics.com/" target="_blank" rel="noopener">Púca Ceramics</a>
+      </span>
     </p>
   </footer>
 

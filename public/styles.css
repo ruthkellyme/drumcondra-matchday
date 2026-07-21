@@ -102,6 +102,7 @@ button {
 button:hover { background: #eef4f7; }
 
 .muted { color: var(--text-secondary); font-size: 13px; }
+.match-watch-note { margin-top: 16px; text-align: center; }
 .page-header .muted { color: rgba(255,255,255,0.75); }
 
 .warnings {
@@ -131,6 +132,16 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
 }
 .legend-item { display: inline-flex; align-items: center; gap: 6px; }
 .legend-note { font-size: 12px; color: var(--muted); }
+.parking-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  margin-left: auto;
+}
+.parking-toggle input { cursor: pointer; }
 .swatch { width: 12px; height: 12px; display: inline-block; }
 .swatch.good { background: var(--status-good); border-radius: 50%; }
 .swatch.warning { background: var(--status-warning); transform: rotate(45deg); }
@@ -149,6 +160,21 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
 }
 .event-card.needs-review { border-color: var(--status-warning); }
 
+.whatsapp-card { text-align: center; }
+.whatsapp-card p { max-width: 480px; margin: 0 auto 18px; }
+.cta-button {
+  display: inline-block;
+  background: var(--brand-dark);
+  color: #fff;
+  font-family: Inter, sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  text-decoration: none;
+  border-radius: 8px;
+  padding: 12px 22px;
+}
+.cta-button:hover { background: var(--brand); }
+
 .season-row {
   display: flex;
   align-items: center;
@@ -159,10 +185,10 @@ main { max-width: 880px; margin: 0 auto; padding: 20px; }
 }
 .season-row:last-child { border-bottom: none; }
 .season-date { flex: 0 0 110px; color: var(--text-secondary); font-weight: 600; font-size: 13px; }
-.season-fixture { flex: 1 1 auto; }
+.season-fixture { flex: 1 1 auto; min-width: 0; }
 .season-tbc { flex: 0 0 auto; font-size: 12px; }
 .season-link { flex: 0 0 auto; font-size: 13px; font-weight: 600; white-space: nowrap; }
-.event-card h2 { margin: 0 0 4px; font-size: 19px; }
+.event-card h2 { margin: 0 0 4px; font-size: 30px; }
 .day-picker-label { display: block; font-size: 14px; color: var(--text-secondary); margin: 4px 0 4px; }
 .day-picker-label select {
   margin-left: 8px;
@@ -334,6 +360,11 @@ h2 .icon-tier { vertical-align: -2px; }
 .final-whistle-band:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 
 .lane { position: relative; margin-bottom: 3px; }
+/* Parking's hidden by default — Roads + Foot traffic covers the common
+   case, and the checkbox in the legend brings it back for anyone who wants
+   the full picture. */
+.lane[data-lane="parking"] { display: none; }
+.show-parking .lane[data-lane="parking"] { display: block; }
 .lane-track { position: relative; height: 44px; background: var(--surface-1); border: 1px solid var(--gridline); border-radius: 4px; }
 /* Overlaid on the bar itself rather than a separate row — a dark chip so it
    stays readable regardless of which status colour it happens to sit over. */
@@ -357,7 +388,7 @@ h2 .icon-tier { vertical-align: -2px; }
   top: 0;
   height: 100%;
   left: var(--from);
-  width: calc(var(--to) - var(--from) - 2px);
+  width: calc(var(--to) - var(--from) - var(--gap, 2px));
   cursor: pointer;
 }
 .seg:first-child { border-top-left-radius: 4px; border-bottom-left-radius: 4px; }
@@ -408,7 +439,7 @@ h2 .icon-tier { vertical-align: -2px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hatch-closed, .seg.textured, .now-marker, .now-line, .timeline-segment {
+  .hatch-closed, .seg.textured, .now-marker, .now-line, .timeline-segment, .loading-lights span {
     animation: none !important;
   }
   .timeline-segment {
@@ -418,6 +449,27 @@ h2 .icon-tier { vertical-align: -2px; }
   .now-marker, .now-line {
     opacity: 1 !important;
   }
+  .loading-lights span { opacity: 1 !important; }
+}
+
+/* A little traffic-light wink while data loads — on brand for a traffic app,
+   and a clearer "something's happening" signal than plain static text. */
+.loading-row { display: flex; align-items: center; gap: 10px; }
+.loading-lights { display: inline-flex; gap: 5px; }
+.loading-lights span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  opacity: 0.25;
+  animation: trafficWink 1.2s ease-in-out infinite;
+}
+.loading-lights span:nth-child(1) { background: var(--status-good); animation-delay: 0s; }
+.loading-lights span:nth-child(2) { background: var(--status-warning); animation-delay: 0.2s; }
+.loading-lights span:nth-child(3) { background: var(--status-critical); animation-delay: 0.4s; }
+@keyframes trafficWink {
+  0%, 100% { opacity: 0.25; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
 }
 
 .axis { position: relative; height: 16px; margin: 4px 0 14px; }
@@ -462,7 +514,7 @@ h2 .icon-tier { vertical-align: -2px; }
 .details-table { margin-top: 10px; }
 .phase-group { margin-top: 14px; }
 .phase-group h4 { margin: 0 0 4px; font-size: 12px; font-weight: 700; color: var(--text-secondary); }
-.phase-list { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.phase-list { list-style: none; margin: 0; padding: 0; font-size: 14px; }
 .phase-row {
   display: flex;
   align-items: center;
@@ -476,7 +528,7 @@ h2 .icon-tier { vertical-align: -2px; }
   flex: 0 0 150px;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
-  font-size: 12px;
+  font-size: 14px;
 }
 .phase-label { flex: 1 1 auto; }
 .phase-source {
@@ -488,7 +540,7 @@ h2 .icon-tier { vertical-align: -2px; }
 }
 .phase-source.official { color: var(--brand); font-weight: 700; }
 
-details summary { cursor: pointer; color: var(--brand); font-size: 13px; margin-top: 6px; }
+details summary { cursor: pointer; color: var(--brand); font-size: 15px; margin-top: 6px; }
 
 .map-popup { font-size: 13px; max-width: 220px; }
 .stadium-icon { display: flex; align-items: center; justify-content: center; }
@@ -523,14 +575,6 @@ details summary { cursor: pointer; color: var(--brand); font-size: 13px; margin-
   justify-content: center;
   box-shadow: 0 0 0 2px #fff, 0 1px 3px rgba(0, 0, 0, 0.3);
 }
-.entrance-icon-arrow {
-  width: 0;
-  height: 0;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  border-left: 8px solid #fff;
-  margin-left: 2px;
-}
 .barrier-icon { display: flex; align-items: center; justify-content: center; color: var(--status-warning); }
 .map-pin-label {
   font-size: 12px;
@@ -550,7 +594,6 @@ details summary { cursor: pointer; color: var(--brand); font-size: 13px; margin-
   align-items: center;
   justify-content: center;
 }
-.legend-icon-entrance .entrance-icon-arrow { border-top-width: 3px; border-bottom-width: 3px; border-left-width: 5px; margin-left: 1px; }
 
 /* Road Closures page — the map IS the page, not a card inside one. Full
    bleed under a slim floating nav strip, with a legend chip docked over the
@@ -640,16 +683,19 @@ details summary { cursor: pointer; color: var(--brand); font-size: 13px; margin-
    rather than floating above leftover page background. */
 .site-footer {
   background: var(--brand-dark);
-  padding: 22px 20px;
+  padding: 48px 20px;
 }
 .shoutout {
   max-width: 880px;
   margin: 0 auto;
-  font-size: 16px;
+  font-family: 'Fraunces', Georgia, serif;
+  font-size: 24px;
   font-weight: 600;
   color: #f5f5f2;
   text-align: center;
 }
+.shoutout-name { display: block; font-weight: 600; }
+.shoutout-links { display: block; margin-top: 8px; font-size: 13px; font-weight: 400; }
 .shoutout a { color: #8fd2f2; }
 .meta-row--footer { justify-content: center; margin-top: 16px; }
 /* A ghost button on navy, not the plain white pill used elsewhere — that
@@ -726,6 +772,7 @@ html, body { overflow-x: hidden; }
     margin-bottom: 0;
   }
   .lane { flex: 1 1 0; height: 100%; margin-bottom: 0; }
+  .show-parking .lane[data-lane="parking"] { display: flex; }
   .lane-track { width: 100%; height: 100%; }
   .lane-name {
     top: 8px;
@@ -738,7 +785,7 @@ html, body { overflow-x: hidden; }
     left: 0;
     top: var(--from);
     width: 100%;
-    height: calc(var(--to) - var(--from) - 2px);
+    height: calc(var(--to) - var(--from) - var(--gap, 2px));
   }
   .seg:first-child { border-radius: 4px 4px 0 0; }
   .seg:last-child { border-radius: 0 0 4px 4px; }
@@ -755,11 +802,23 @@ html, body { overflow-x: hidden; }
     border-top: 2px dashed var(--brand-dark);
   }
   .now-marker { border-top: 3px solid var(--text-primary); box-shadow: 0 -1px 0 #fff, 0 1px 0 #fff; }
-  .kickoff-flag, .now-flag {
-    top: 0;
+  /* Flags live inside the chart's own width (right edge for KO/FT, left edge
+     for Now) rather than spilling into the narrow axis strip beside it —
+     that strip is nowhere near wide enough for text like "FT ~5:00pm–5:30pm"
+     and the old approach let it run off the edge of the phone screen. */
+  .kickoff-flag {
+    top: auto;
+    bottom: 2px;
     left: auto;
-    right: 0;
-    transform: translate(100%, -50%);
+    right: 4px;
+    transform: none;
+  }
+  .now-flag {
+    top: auto;
+    bottom: 2px;
+    left: 4px;
+    right: auto;
+    transform: none;
   }
 
   .final-whistle-band {
@@ -775,11 +834,12 @@ html, body { overflow-x: hidden; }
   }
   .final-whistle-flag {
     bottom: auto;
-    top: 0;
-    left: 100%;
-    transform: translate(4px, -50%);
+    top: 2px;
+    left: auto;
+    right: 4px;
+    transform: none;
   }
-  .final-whistle-flag--low { bottom: auto; left: 100%; top: 100%; }
+  .final-whistle-flag--low { top: 22px; }
 
   /* Axis moves from a strip below the chart to a strip beside it, ticks
      positioned by --pos the same way as everywhere else on this chart. */

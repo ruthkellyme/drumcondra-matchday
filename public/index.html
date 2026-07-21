@@ -7,14 +7,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="/favicon.ico" sizes="any" />
+<link rel="icon" type="image/png" sizes="32x32" href="/icon-32.png" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="page-header">
     <h1>Drumcondra Match Day Watch</h1>
     <p class="subtitle">
-      Unofficial, best-guess estimates of when your road, your parking and the footpaths outside will feel a Croke
-      Park crowd — built on top of the real notices at
+      Unofficial, best-guess estimates of when Clonliffe Road and surrounding parking and footpaths will be affected
+      by a Croke Park crowd — built on top of the real notices at
       <a href="https://crokepark.ie/communityinfo" target="_blank" rel="noopener">crokepark.ie/communityinfo</a>.
     </p>
     <nav class="site-nav" aria-label="Site">
@@ -27,15 +30,16 @@
 
   <main>
     <section id="events" aria-live="polite">
-      <p class="muted">Loading upcoming events…</p>
+      <p class="muted loading-row"><span class="loading-lights"><span></span><span></span><span></span></span>Loading upcoming events…</p>
     </section>
 
     <section class="legend" aria-label="Status legend">
-      <span class="legend-item"><span class="swatch good"></span>Open / available / normal</span>
-      <span class="legend-item"><span class="swatch warning"></span>Restricted / partial / busy</span>
-      <span class="legend-item"><span class="swatch critical"></span>Closed / maxed out / very busy</span>
-      <span class="legend-item"><span class="swatch critical striped"></span>Closed, but resident pass still gets through</span>
+      <span class="legend-item"><span class="swatch good"></span>Open</span>
+      <span class="legend-item"><span class="swatch warning"></span>Restricted</span>
+      <span class="legend-item"><span class="swatch critical"></span>Closed</span>
+      <span class="legend-item"><span class="swatch critical striped"></span>Closed, residents only</span>
       <span class="legend-note">"Croke Park" = their own published time. "Est." = our best guess.</span>
+      <label class="parking-toggle"><input type="checkbox" id="show-parking-toggle" /> Also show parking status</label>
     </section>
 
     <section id="day-tools" class="event-card" hidden>
@@ -43,14 +47,31 @@
       <label class="day-picker-label">Which day? <select id="day-picker"></select></label>
       <div id="day-tools-content"></div>
     </section>
+
+    <p class="muted match-watch-note">
+      A detailed estimate can only be generated once Croke Park has published their own notice for an event — until
+      then, it won't show up here yet.
+    </p>
+    <section class="event-card whatsapp-card">
+      <h2>Faster updates on WhatsApp</h2>
+      <p class="muted">
+        Road-closure spottings and one-off diversions land on the WhatsApp channel before they make it onto this site.
+      </p>
+      <a class="cta-button" href="https://whatsapp.com/channel/0029Vb82lCK9Bb67yBIHHo0q" target="_blank" rel="noopener">
+        Open the WhatsApp Channel →
+      </a>
+    </section>
   </main>
 
   <footer class="site-footer">
     <p class="shoutout">
-      This website was made by Ruth, a local resident. If you like this website, give me a follow on Instagram:
-      <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
-      · <a href="https://pucaceramics.com/" target="_blank" rel="noopener">Púca Ceramics</a>
-      · <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
+      <span class="shoutout-name">Made by Ruth, a local resident.</span>
+      <span class="shoutout-links">
+        If you like this website, give me a follow on Instagram:
+        <a href="https://instagram.com/puca_ceramics" target="_blank" rel="noopener">@puca_ceramics</a>
+        · <a href="https://credublinnorth.ie/" target="_blank" rel="noopener">cré, opening in Dublin North</a>
+        · <a href="https://pucaceramics.com/" target="_blank" rel="noopener">Púca Ceramics</a>
+      </span>
     </p>
     <div class="meta-row meta-row--footer">
       <button id="refresh-btn" type="button">Refresh</button>
