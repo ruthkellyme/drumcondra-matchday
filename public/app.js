@@ -572,10 +572,13 @@ async function loadEvents() {
           text: "No upcoming event is published yet — this'll update as soon as Croke Park releases the details for the next one.",
         }));
       }
-      // Collapsed by default — past matches are reference material, not the
-      // thing anyone opens this page to see, so they shouldn't push the
-      // actually-relevant upcoming event further down the page.
-      const pastDetails = el('details', { class: 'past-events-toggle' });
+      // Collapsed by default once there's an upcoming event to lead with —
+      // past matches are reference material at that point, and shouldn't
+      // push the actually-relevant one further down the page. But with
+      // nothing upcoming published yet, the past match *is* the only real
+      // content here, so start it open rather than hiding everything behind
+      // a click.
+      const pastDetails = el('details', { class: 'past-events-toggle', ...(!upcoming.length ? { open: '' } : {}) });
       pastDetails.appendChild(el('summary', { class: 'past-events-header', text: 'Past — for reference' }));
       past
         .sort((a, b) => b.date.localeCompare(a.date))
