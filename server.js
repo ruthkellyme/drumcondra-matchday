@@ -205,7 +205,11 @@ app.get('/api/season', async (req, res) => {
       fetchSeasonFixtures(),
       fetchEvents().catch(() => ({ events: [] })),
     ]);
-    const detailedDates = new Set(detailedEvents.map((e) => e.date));
+    // Being in this list only means Croke Park has published *a* notice for the
+    // date (e.g. just the road-closure text) — only count it as "detailed" once
+    // a timeline was actually computed, or the season page links to a match
+    // page that just shows an error instead of the promised estimate.
+    const detailedDates = new Set(detailedEvents.filter((e) => e.timeline).map((e) => e.date));
     const todayISO = new Date().toISOString().slice(0, 10);
     const upcoming = fixtures
       .filter((f) => f.sortKey >= todayISO)
