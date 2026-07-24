@@ -207,9 +207,15 @@ app.get('/api/season', async (req, res) => {
     ]);
     // Being in this list only means Croke Park has published *a* notice for the
     // date (e.g. just the road-closure text) — only count it as "detailed" once
-    // a timeline was actually computed, or the season page links to a match
-    // page that just shows an error instead of the promised estimate.
-    const detailedDates = new Set(detailedEvents.filter((e) => e.timeline).map((e) => e.date));
+    // a timeline could actually be computed, or the season page links to a
+    // match page that just shows an error instead of the promised estimate.
+    // applyHeuristics (only run inside /api/events, not here) gates timeline
+    // solely on having a fixture with a parsed kick-off time, so that's the
+    // same check to use here without paying for the full heuristics+geocoding
+    // pass just to answer "does this one have an estimate yet".
+    const detailedDates = new Set(
+      detailedEvents.filter((e) => (e.fixtures || []).some((f) => f.time)).map((e) => e.date)
+    );
     const todayISO = new Date().toISOString().slice(0, 10);
     const upcoming = fixtures
       .filter((f) => f.sortKey >= todayISO)
